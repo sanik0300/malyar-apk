@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentView xmlns="http://xamarin.com/schemas/2014/forms" 
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:malyar_apk"
+             x:Class="malyar_apk.PeriodicalPicture" 
+             BackgroundColor="Violet">
+
+    <ContentView.Resources>
+        <ResourceDictionary>
+
+        </ResourceDictionary>
+    </ContentView.Resources>
+    
+    <Frame Padding="10" Margin="5" BackgroundColor="DarkMagenta">
+        <StackLayout Background="White" Orientation="Vertical">
+            <Image VerticalOptions="FillAndExpand" x:Name="wallpaper" Source="images/plus_add.png">
+                <Image.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="Wallpaper_Tapped" NumberOfTapsRequired="1"></TapGestureRecognizer>
+                </Image.GestureRecognizers>
+            </Image>
+            <StackLayout IsVisible="False" x:Name="times" Orientation="Horizontal" VerticalOptions="End" HorizontalOptions="CenterAndExpand">
+                <TimePicker x:Name="when_begin"></TimePicker>
+                <TimePicker x:Name="when_end"></TimePicker>
+            </StackLayout> 
+            
+        </StackLayout>
+    </Frame>
+</ContentView>

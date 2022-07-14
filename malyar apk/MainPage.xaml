@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:malyar_apk"
+             x:Class="malyar_apk.MainPage">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Style TargetType="ImageButton" x:Key="almost_square">
+                <Style.Setters>
+                    <Setter Property="WidthRequest" Value="{Binding Source={RelativeSource Mode=Self}, Path=Height}"> </Setter>
+                    <Setter Property="HeightRequest" Value="50"></Setter>
+                    <Setter Property="Padding" Value="4"></Setter>
+                    <Setter Property="Aspect" Value="AspectFill"></Setter>
+                </Style.Setters>
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    
+    <StackLayout x:Name="stack_layout" >
+        <StackLayout Padding="6" x:Name="buttons_strip" Background="Yellow">
+            <ImageButton x:Name="scroll_up" Clicked="scroll_up_Clicked" Style="{StaticResource almost_square}" Source="images/scroll.png"></ImageButton>
+            <ImageButton x:Name="scroll_down" Clicked="scroll_down_Clicked" Style="{StaticResource almost_square}" Source="images/scrolldown.png"></ImageButton>
+
+            <Image x:Name="loading" Background="Cyan" VerticalOptions="CenterAndExpand" HorizontalOptions="Fill" HeightRequest="{Binding Source={RelativeSource Mode=Self}, Path=Width}"></Image>
+            <ProgressBar x:Name="snek" HorizontalOptions="FillAndExpand" VerticalOptions="Center" Background="LightGreen"></ProgressBar>
+
+            <ImageButton  x:Name="to_settings" Style="{StaticResource almost_square}" Source="images/settings_icon.png"></ImageButton>
+        </StackLayout>
+        
+        <ScrollView Padding="5" Background="Orange" Scrolled="scrollview_Scrolled" x:Name="scrollview" Orientation="Vertical" HorizontalOptions="Fill">
+            <Grid BackgroundColor="LightBlue" x:Name="grid" Padding="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition></RowDefinition>
+                    <RowDefinition></RowDefinition>
+                    <RowDefinition></RowDefinition>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+            </Grid>
+        </ScrollView>
+    </StackLayout>
+
+</ContentPage>
