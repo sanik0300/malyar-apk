@@ -13,13 +13,21 @@
                     <Setter Property="Padding" Value="4"></Setter>
                     <Setter Property="Aspect" Value="AspectFill"></Setter>
                 </Style.Setters>
+                <Style.Triggers>
+                    <Trigger TargetType="ImageButton" Property="IsEnabled" Value="False">
+                        <Setter Property="BackgroundColor" Value="Gray"></Setter>
+                    </Trigger>
+                    <Trigger TargetType="ImageButton" Property="IsEnabled" Value="True">
+                        <Setter Property="BackgroundColor" Value="White"></Setter>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
         </ResourceDictionary>
     </ContentPage.Resources>
     
     <StackLayout x:Name="stack_layout" >
         <StackLayout Padding="6" x:Name="buttons_strip" Background="Yellow">
-            <ImageButton x:Name="scroll_up" Clicked="scroll_up_Clicked" Style="{StaticResource almost_square}" Source="images/scroll.png"></ImageButton>
+            <ImageButton IsEnabled="False" x:Name="scroll_up" Clicked="scroll_up_Clicked" Style="{StaticResource almost_square}" Source="images/scroll.png"></ImageButton>
             <ImageButton x:Name="scroll_down" Clicked="scroll_down_Clicked" Style="{StaticResource almost_square}" Source="images/scrolldown.png"></ImageButton>
 
             <Image x:Name="loading" Background="Cyan" VerticalOptions="CenterAndExpand" HorizontalOptions="Fill" HeightRequest="{Binding Source={RelativeSource Mode=Self}, Path=Width}"></Image>
@@ -29,7 +37,7 @@
         </StackLayout>
         
         <ScrollView Padding="5" Background="Orange" Scrolled="scrollview_Scrolled" x:Name="scrollview" Orientation="Vertical" HorizontalOptions="Fill">
-            <Grid BackgroundColor="LightBlue" x:Name="grid" Padding="5">
+            <Grid BackgroundColor="LightBlue" x:Name="grid" Padding="5" >
                 <Grid.RowDefinitions>
                     <RowDefinition></RowDefinition>
                     <RowDefinition></RowDefinition>
