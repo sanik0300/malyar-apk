@@ -10,112 +10,34 @@ namespace malyar_apk
     public partial class MainPage : ContentPage
     {
         private double width = 0, height = 0;
-        IMagesMediator mediator = DependencyService.Get<IMagesMediator>();
+       
         bool horizontal;
-        int scrollable_unit_X, scrollable_unit_Y;
 
         public MainPage()
         {
             InitializeComponent();
-            //grid.SizeChanged += Grid_SizeChanged;
         }
 
-        private void InsertNewWallpaper(PeriodicalPicture PP)
-        {
-            if (horizontal)
-            {
-                grid.ColumnDefinitions.Add(new ColumnDefinition());
-                grid.Children.Add(PP, grid.ColumnDefinitions.Count - 1, 0);
-            }
-            else
-            {
-                if (grid.Children.Count % 2 == 0)
-                {
-                    grid.RowDefinitions.Add(new RowDefinition());
-                    grid.Children.Add(PP, 0, grid.RowDefinitions.Count - 1);
-                }
-                else
-                {
-                    grid.Children.Add(PP, 1, grid.RowDefinitions.Count - 1);
-                }
-            }
-        }
-
-        private void AlignTimespanOfNewWallpaper(object sender, EventArgs e)
-        {
-            var current = grid.Children[grid.Children.Count - 1] as PeriodicalPicture;
-            var previous = grid.Children[grid.Children.Count - 2] as PeriodicalPicture;
-            int compare_result = current.CompareTo(previous);
-
-            if(compare_result == -1 || compare_result == 2)
-            {
-                current.Swap(previous);
-            }
-
-            current.FilledIn -= AlignTimespanOfNewWallpaper;
-
-            if (Math.Abs(compare_result) == 2)//То есть один полностью закрывает другой, но они не равны
-            {
-                var third = previous.Clone() as PeriodicalPicture;
-                InsertNewWallpaper(third);
-                PeriodicalPicture.Join(previous, current, third);
-                
-                ///third.FilledIn += AlignTimespanOfNewWallpaper;
-            }
-            else { PeriodicalPicture.Join(previous, current, (TimespanCompareResult)compare_result); }
-          
-            var final_tail = new PeriodicalPicture();
-            final_tail.FilledIn += AlignTimespanOfNewWallpaper;
-            InsertNewWallpaper(final_tail);
-        }
-
-        /*private void Grid_SizeChanged(object sender, EventArgs e)
-        {
-            if (grid.ColumnDefinitions.Count != 0)
-            {
-                scrollable_unit_X = (int)grid.Width / grid.ColumnDefinitions.Count;
-            }
-            else if (grid.RowDefinitions.Count != 0)
-            {
-                scrollable_unit_Y = (int)grid.Height / grid.RowDefinitions.Count;              
-            }
-        }*/
-         /*private void grid_ChildAdded(object sender, ElementEventArgs e)
-         {
-            var last_PP = grid.Children[grid.Children.Count - 1] as PeriodicalPicture;
-            if(last_PP != null)
-            {
-                last_PP.FilledIn += AlignTimespanOfNewWallpaper;
-                if (!last_PP.Empty)
-                {
-                    InsertNewWallpaper(new PeriodicalPicture());
-                }
-            }
-        }*/
+       private void InsertNewWallpaper()
+       {
+            schedule_container.Children.Add(new SeparatorCustom());
+            schedule_container.Children.Add(new SchedulePiece());         
+       }
 
         protected override void OnAppearing()
         {          
             base.OnAppearing();
-            PeriodicalPicture.InitializeImageBoundsRatio();
 
             ArrayList ArL = TimedPicturesLoader.InitExistingOnes();
             if(ArL == null)
             {
-                grid.Children.Add(new PeriodicalPicture(ImageSource.FromStream( () => new MemoryStream(mediator.GetOriginalWP()) )), 0, 0);//with the original wallpaper
-                grid.Children.Add(new PeriodicalPicture(), 1, 0);//aka a button to add new ones
+                schedule_container.Children.Add(new SchedulePiece(TimedPictureModel.just_original, TimeSpan.Zero, TimeSpan.FromDays(1)));//original wallpaper during the whole day
+                //for(int i =0; i<2; i++) { InsertNewWallpaper(); }
             }
             else
             {
                 throw new NotImplementedException("ты как вообще сюда добрался");
-            }
-            
-            PeriodicalPicture[] pictures = grid.Children.OfType<PeriodicalPicture>().ToArray();
-            pictures[pictures.Length - 1].FilledIn += AlignTimespanOfNewWallpaper;
-
-            /*for(int i = 1; i<pictures.Length; i++)
-            {
-                pictures[i].FilledIn += AlignTimespanOfNewWallpaper;
-            }*/
+            }          
         }
 
         private async void scroll_up_Clicked(object sender, EventArgs e)
@@ -132,15 +54,59 @@ namespace malyar_apk
         {
             if (horizontal)
             {
-                scroll_up.IsEnabled = scrollview.ScrollX > scrollable_unit_X / 2;
-                scroll_down.IsEnabled = (scrollview.Width - scrollview.ScrollX) > scrollable_unit_X / 2;
+                scroll_up.IsEnabled = scrollview.ScrollX > schedule_container.Children[0].Width / 2;
+                scroll_down.IsEnabled = (scrollview.Width - scrollview.ScrollX) > schedule_container.Children.Last().Width / 2;
             }
             else
             {
-                //snek.Text = (sender as ScrollView).ScrollY.ToString();
-                scroll_up.IsEnabled = scrollview.ScrollY > scrollable_unit_Y / 2;
-                scroll_down.IsEnabled = (scrollview.Height - scrollview.ScrollY) > scrollable_unit_Y/2; 
+                scroll_up.IsEnabled = scrollview.ScrollY > schedule_container.Children[0].Height / 2;
+                scroll_down.IsEnabled = (scrollview.Height - scrollview.ScrollY) > schedule_container.Children.Last().Height * (double)(schedule_container.Children.Count+1)/4;
             }
+        }
+
+        private void addnew_Clicked(object sender, EventArgs e)
+        {
+
+        }
+
+        private bool time_change_recursion = false;
+        private void time_picker_for_new_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != "Time")
+                return;
+            TimePicker[] pickers_up = new TimePicker[2] { begin_new, end_new };
+
+            checkbox_pair.IsVisible = pickers_up[1].Time == TimeSpan.Zero;
+            if (checkbox_pair.IsVisible) {
+                whole_day_CheckedChanged(whole_day, new CheckedChangedEventArgs(whole_day.IsChecked));
+                return; 
+            }//Отстать от юзера и дать шанс включить поддержку 24 часов
+
+            if (pickers_up[0].Time == pickers_up[1].Time &&!time_change_recursion)
+            {
+                if (pickers_up[0].Time.TotalMinutes < TimedPictureModel.MinLegitMinutesDelta)//если время выбрано от 00:00 до где-то 00:04
+                {
+                    pickers_up[1].Time = TimeSpan.FromMinutes(pickers_up[1].Time.TotalMinutes + TimedPictureModel.MinLegitMinutesDelta);
+                }
+                else
+                {
+                    pickers_up[0].Time = TimeSpan.FromMinutes(pickers_up[0].Time.TotalMinutes - TimedPictureModel.MinLegitMinutesDelta);
+                }
+            }
+            time_change_recursion = false;
+
+            if (pickers_up[1].Time < pickers_up[0].Time)
+            {
+                TimeSpan temp = pickers_up[0].Time;
+                time_change_recursion = true;
+                pickers_up[0].Time = pickers_up[1].Time;
+                pickers_up[1].Time = temp;
+            }
+        }
+
+        private void whole_day_CheckedChanged(object sender, CheckedChangedEventArgs e)
+        {
+            addnew.IsEnabled = e.Value && (sender as CheckBox).IsVisible;
         }
 
         protected override void OnSizeAllocated(double width, double height)
@@ -148,46 +114,26 @@ namespace malyar_apk
             if (this.width == width && this.height == height) { return; }
             horizontal = width > height;
 
-            PeriodicalPicture[] pictures = grid.Children.OfType<PeriodicalPicture>().ToArray();
-            foreach (PeriodicalPicture pp in pictures)
-            {
-                pp.PreserveShape(horizontal);
-            } 
            
             base.OnSizeAllocated(width, height);
 
             this.width = width;
             this.height = height;
-            grid.RowDefinitions.Clear();
-            grid.ColumnDefinitions.Clear();
 
             scrollview.Orientation = horizontal ? ScrollOrientation.Horizontal : ScrollOrientation.Vertical;
-            stack_layout.Orientation = horizontal ? StackOrientation.Horizontal : StackOrientation.Vertical;
-            buttons_strip.Orientation = horizontal ? StackOrientation.Vertical : StackOrientation.Horizontal;
+            stack_layout.Orientation = horizontal ? StackOrientation.Horizontal : StackOrientation.Vertical;//большая панель где содержится вообще всё
+            buttons_strip.Orientation = horizontal ? StackOrientation.Vertical : StackOrientation.Horizontal;//панель где кнопка с настройками
+            add_another.Orientation = horizontal ? StackOrientation.Vertical : StackOrientation.Horizontal;//панель где кнопка добавления
+            schedule_container.Orientation = horizontal ? StackOrientation.Horizontal : StackOrientation.Vertical;//панель которая содержит сами обои
             snek.IsVisible = !horizontal;
             loading.IsVisible = horizontal;
             
             snek.Rotation = scroll_up.Rotation = scroll_down.Rotation = horizontal ? -90 : 0;
 
-            if (horizontal)
+            foreach(View view in schedule_container.Children)
             {
-                for (int i = 0; i < pictures.Length; i++)
-                {
-                    grid.ColumnDefinitions.Add(new ColumnDefinition());
-                    grid.Children.Add(pictures[i], i, 0);
-                }
-            }
-            else
-            {
-                grid.ColumnDefinitions.Add(new ColumnDefinition());
-                grid.ColumnDefinitions.Add(new ColumnDefinition());
-
-                for (int i = 0; i < pictures.Length; i++)
-                {
-                    if(i%2==0) { grid.RowDefinitions.Add(new RowDefinition()); }
-                        
-                    grid.Children.Add(pictures[i], i % 2, i / 2);
-                }
+                view.HorizontalOptions = horizontal ? LayoutOptions.Start : LayoutOptions.FillAndExpand;
+                view.VerticalOptions = horizontal ? LayoutOptions.FillAndExpand : LayoutOptions.Start;
             }
         }
     }

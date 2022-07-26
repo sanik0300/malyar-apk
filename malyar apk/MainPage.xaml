@@ -8,7 +8,7 @@
         <ResourceDictionary>
             <Style TargetType="ImageButton" x:Key="almost_square">
                 <Style.Setters>
-                    <Setter Property="WidthRequest" Value="{Binding Source={RelativeSource Mode=Self}, Path=Height}"> </Setter>
+                    <Setter Property="WidthRequest" Value="{Binding Source={RelativeSource Mode=Self}, Path=Height}"></Setter>
                     <Setter Property="HeightRequest" Value="50"></Setter>
                     <Setter Property="Padding" Value="4"></Setter>
                     <Setter Property="Aspect" Value="AspectFill"></Setter>
@@ -18,7 +18,7 @@
                         <Setter Property="BackgroundColor" Value="Gray"></Setter>
                     </Trigger>
                     <Trigger TargetType="ImageButton" Property="IsEnabled" Value="True">
-                        <Setter Property="BackgroundColor" Value="White"></Setter>
+                        <Setter Property="BackgroundColor" Value="LightCyan"></Setter>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -26,29 +26,38 @@
     </ContentPage.Resources>
     
     <StackLayout x:Name="stack_layout" >
-        <StackLayout Padding="6" x:Name="buttons_strip" Background="Yellow">
+        <StackLayout Padding="6" x:Name="buttons_strip">
             <ImageButton IsEnabled="False" x:Name="scroll_up" Clicked="scroll_up_Clicked" Style="{StaticResource almost_square}" Source="images/scroll.png"></ImageButton>
             <ImageButton x:Name="scroll_down" Clicked="scroll_down_Clicked" Style="{StaticResource almost_square}" Source="images/scrolldown.png"></ImageButton>
 
             <Image x:Name="loading" Background="Cyan" VerticalOptions="CenterAndExpand" HorizontalOptions="Fill" HeightRequest="{Binding Source={RelativeSource Mode=Self}, Path=Width}"></Image>
             <ProgressBar x:Name="snek" HorizontalOptions="FillAndExpand" VerticalOptions="Center" Background="LightGreen"></ProgressBar>
-
-            <ImageButton  x:Name="to_settings" Style="{StaticResource almost_square}" Source="images/settings_icon.png"></ImageButton>
+ 
+            <ImageButton  x:Name="to_settings" Style="{StaticResource almost_square}" Background="lightGray" Source="images/settings_icon.png"></ImageButton>
         </StackLayout>
+
+        <Frame CornerRadius="16">
+            <StackLayout Orientation="Horizontal" HorizontalOptions="Center" VerticalOptions="Center" x:Name="add_another">
+                <Button x:Name="addnew" Clicked="addnew_Clicked" IsEnabled="False"></Button>
+                <TimePicker x:Name="begin_new" PropertyChanged="time_picker_for_new_PropertyChanged"></TimePicker>
+                <TimePicker x:Name="end_new" PropertyChanged="time_picker_for_new_PropertyChanged"></TimePicker>
+                <StackLayout Orientation="Horizontal" x:Name="checkbox_pair">
+                    <CheckBox x:Name="whole_day" CheckedChanged="whole_day_CheckedChanged"></CheckBox>
+                    <Label VerticalOptions="Center" FontSize="20" TextDecorations="Underline" TextColor="Black">24:00</Label>
+                </StackLayout>
+                
+            </StackLayout>
+        </Frame>
+
+        <ScrollView Padding="5" Background="#ffdca1" Scrolled="scrollview_Scrolled" x:Name="scrollview" Orientation="Vertical">
+                <StackLayout x:Name="schedule_container" HorizontalOptions="FillAndExpand">
+                    <StackLayout.GestureRecognizers>
+                        <DropGestureRecognizer AllowDrop="True"></DropGestureRecognizer>
+                    </StackLayout.GestureRecognizers>
+                </StackLayout>
+            </ScrollView>
         
-        <ScrollView Padding="5" Background="Orange" Scrolled="scrollview_Scrolled" x:Name="scrollview" Orientation="Vertical" HorizontalOptions="Fill">
-            <Grid BackgroundColor="LightBlue" x:Name="grid" Padding="5" >
-                <Grid.RowDefinitions>
-                    <RowDefinition></RowDefinition>
-                    <RowDefinition></RowDefinition>
-                    <RowDefinition></RowDefinition>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition></ColumnDefinition>
-                    <ColumnDefinition></ColumnDefinition>
-                </Grid.ColumnDefinitions>
-            </Grid>
-        </ScrollView>
+        
     </StackLayout>
 
 </ContentPage>
