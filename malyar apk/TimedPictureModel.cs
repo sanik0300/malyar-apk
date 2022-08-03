@@ -1,31 +1,64 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 
 namespace malyar_apk
 {
-    public enum TimespanCompareResult : int
+    public enum ChangeDirection : byte
     {
-        WITHIN = -2, EARLIER, EQUAL, LATER, MOREOVER
+        AffectUpwards, AffectDownwards, InsertNew
     }
 
-    class TimedPictureModel : IComparable
+    public class TimedPictureModel : IComparable, ICloneable, INotifyPropertyChanged
     {
         public const string just_original = "RETRIEVE_ORIGINAL";
         public string path_to_wallpaper;
-        public TimeSpan start_time=TimeSpan.Zero, end_time=TimeSpan.Zero;
+        public TimeSpan start_time, end_time;
+        public TimeSpan StartTime { 
+            get { return start_time; } 
+            set {
+                start_time = value;
+                PropertyChanged.Invoke(this, new PropertyChangedEventArgs(nameof(start_time))); 
+            }
+        }
+        public TimeSpan EndTime
+        {
+            get { return end_time; }
+            set
+            {
+                end_time = value;
+                PropertyChanged.Invoke(this, new PropertyChangedEventArgs(nameof(end_time)));
+            }
+        }
 
         public const int MinLegitMinutesDelta = 5;
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public double DurationInMinutes { get
             {
                 return end_time.TotalMinutes - start_time.TotalMinutes;
             } }
 
-        public bool Complete { get {
-                return path_to_wallpaper != string.Empty && path_to_wallpaper != null && start_time != TimeSpan.MinValue && end_time != TimeSpan.MinValue;
-                    } 
+        public static TimeSpan ClampTimespan(TimeSpan tsp)//specially for assigning time to time pickers >~<
+        {
+            if (tsp.TotalHours < 24)
+                return tsp;
+            return new TimeSpan(tsp.Hours, tsp.Minutes, 0);
+        }
+        
+        public TimedPictureModel(string path_to_img, TimeSpan start, TimeSpan end)
+        {
+            this.path_to_wallpaper = path_to_img;
+            this.start_time = start;
+            this.end_time = end;
+        }
+
+        public override string ToString()
+        {
+            return $"{start_time:hh\\:mm} - {end_time:hh\\:mm}: {path_to_wallpaper}";
         }
 
         public int CompareTo(object obj)
@@ -50,25 +83,24 @@ namespace malyar_apk
                 return 2;
             }
             return 0;
-        }
-    }
+        }    
 
-    class CompareByStartTime : IComparer<TimedPictureModel>
-    {
-        public int Compare(TimedPictureModel x, TimedPictureModel y)
-        {
-            if(x.start_time < y.start_time) { return -1; }
-            if(x.start_time > y.start_time) { return 1; }
-            return 0;
+        public object Clone()
+        {            
+            return new TimedPictureModel(this.path_to_wallpaper, TimeSpan.FromMinutes(this.start_time.TotalMinutes), TimeSpan.FromMinutes(this.end_time.TotalMinutes));
         }
-    }
-    class CompareByEndTime : IComparer<TimedPictureModel>
-    {
-        public int Compare(TimedPictureModel x, TimedPictureModel y)
+
+        public void Join(TimedPictureModel other, ChangeDirection direction)
         {
-            if (x.end_time < y.end_time) { return -1; }
-            if (x.end_time > y.end_time) { return 1; }
-            return 0;
+            switch (direction)
+            {
+                case ChangeDirection.AffectUpwards:
+                    other.EndTime = TimeSpan.FromMinutes(this.start_time.TotalMinutes);
+                    break;
+                case ChangeDirection.AffectDownwards:
+                    other.StartTime = TimeSpan.FromMinutes(this.end_time.TotalMinutes);
+                    break;
+            }
         }
     }
 }

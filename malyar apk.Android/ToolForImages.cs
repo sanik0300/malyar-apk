@@ -1,18 +1,13 @@
 ﻿using Android.App;
 using Android.Content;
-using Android.Content.Res;
 using Android.OS;
-using Android.Runtime;
-using Android.Views;
 using Android.Widget;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 using Xamarin.Forms;
 using Android.Graphics;
 using Android.Graphics.Drawables;
-using Java.IO;
+using Android.Support.Design.Widget;
+using Xamarin.Forms.Platform.Android;
 
 [assembly: Dependency(typeof(malyar_apk.Droid.ToolForImages))]
 namespace malyar_apk.Droid
@@ -43,6 +38,33 @@ namespace malyar_apk.Droid
                 }
             }
             return result;      
+        }
+
+        static internal Context currentActivity;
+
+        public void DeliverToast(string text)
+        {
+            Toast.MakeText(currentActivity, text, ToastLength.Short).Show();
+        }
+
+        public void OuchBadTimespan(string txt, View V)
+        {
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.IceCreamSandwich) {
+
+                IVisualElementRenderer renderer = Platform.GetRenderer(V);
+                if (renderer != null)
+                {
+                    Platform.SetRenderer(V, renderer);
+                    Android.Views.View native_view = renderer.View;
+
+                    Snackbar.Make(native_view, txt, 1200).Show();
+                    
+                    renderer.Dispose();
+                    return;          
+                }
+            }
+            
+            Toast.MakeText(MainActivity.Current, txt, ToastLength.Short).Show();          
         }
     }
 }

@@ -26,13 +26,8 @@ namespace malyar_apk.Droid
             StringBuilder make_Path = new StringBuilder(this.FilesDir.AbsolutePath, this.FilesDir.AbsolutePath.Length+filename.Length);
             make_Path.Append(filename);
             ToolForImages.path_to_schedule = make_Path.ToString();
+            ToolForImages.currentActivity = this;
         }
-        /*protected  override void OnStart()
-        {
-            base.OnStart();
-            this.RequestPermissions(new string[] { "android.permission.READ_EXTERNAL_STORAGE" }, 1);
-
-        }*/
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
         {

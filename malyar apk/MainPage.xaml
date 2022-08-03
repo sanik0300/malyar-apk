@@ -22,6 +22,19 @@
                     </Trigger>
                 </Style.Triggers>
             </Style>
+
+            <Style TargetType="Button" x:Key="often_disabled">
+                <Style.Triggers>
+                    <Trigger TargetType="Button" Property="IsEnabled" Value="False">
+                        <Setter Property="TextColor" Value="Gray"></Setter>
+                        <Setter Property="BackgroundColor" Value="LightGray"></Setter>
+                    </Trigger>
+                    <Trigger TargetType="Button" Property="IsEnabled" Value="True">
+                        <Setter Property="TextColor" Value="Black"></Setter>
+                        <Setter Property="BackgroundColor" Value="LightGreen"></Setter>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
         </ResourceDictionary>
     </ContentPage.Resources>
     
@@ -38,22 +51,27 @@
 
         <Frame CornerRadius="16">
             <StackLayout Orientation="Horizontal" HorizontalOptions="Center" VerticalOptions="Center" x:Name="add_another">
-                <Button x:Name="addnew" Clicked="addnew_Clicked" IsEnabled="False"></Button>
+                <Button x:Name="addnew" Clicked="addnew_Clicked" Text="+" FontSize="28" Style="{StaticResource often_disabled}" IsEnabled="False"></Button>
+           
+                <Image x:Name="preview" Source="images/click_here.png" Aspect="AspectFill" HeightRequest="50" BackgroundColor="LightCyan">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer NumberOfTapsRequired="1" Tapped="preview_Tapped"></TapGestureRecognizer>
+                    </Image.GestureRecognizers>
+                </Image>
+                       
                 <TimePicker x:Name="begin_new" PropertyChanged="time_picker_for_new_PropertyChanged"></TimePicker>
-                <TimePicker x:Name="end_new" PropertyChanged="time_picker_for_new_PropertyChanged"></TimePicker>
-                <StackLayout Orientation="Horizontal" x:Name="checkbox_pair">
+                <TimePicker x:Name="end_new" PropertyChanged="time_picker_for_new_PropertyChanged" Time="08:00"></TimePicker>
+                <StackLayout Orientation="Horizontal" x:Name="checkbox_pair" IsVisible="False">
                     <CheckBox x:Name="whole_day" CheckedChanged="whole_day_CheckedChanged"></CheckBox>
-                    <Label VerticalOptions="Center" FontSize="20" TextDecorations="Underline" TextColor="Black">24:00</Label>
+                    <Label VerticalOptions="Center" FontSize="16" TextDecorations="Underline" TextColor="Black">24:00</Label>
                 </StackLayout>
                 
             </StackLayout>
         </Frame>
 
-        <ScrollView Padding="5" Background="#ffdca1" Scrolled="scrollview_Scrolled" x:Name="scrollview" Orientation="Vertical">
-                <StackLayout x:Name="schedule_container" HorizontalOptions="FillAndExpand">
-                    <StackLayout.GestureRecognizers>
-                        <DropGestureRecognizer AllowDrop="True"></DropGestureRecognizer>
-                    </StackLayout.GestureRecognizers>
+        <ScrollView Padding="5" Background="#ffdca1" Scrolled="scrollview_Scrolled" x:Name="scrollview" Orientation="Vertical" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand">
+                <StackLayout Padding="6" x:Name="schedule_container">
+                   
                 </StackLayout>
             </ScrollView>
         

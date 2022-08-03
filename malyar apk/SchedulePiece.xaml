@@ -8,10 +8,28 @@
     <ContentView.Resources>
         <ResourceDictionary>
             <local:PhoneWidthconvert x:Key="phoneWconvert"></local:PhoneWidthconvert>
+            <local:VerticalConverter x:Key="calculate_height"></local:VerticalConverter>
+            <local:HorizontalConverter x:Key="calculate width"></local:HorizontalConverter>
         </ResourceDictionary>
     </ContentView.Resources>
+
+    <ContentView.HeightRequest>
+        <MultiBinding Converter="{x:StaticResource calculate_height}">
+            <Binding Source="{RelativeSource Mode=Self}" Path="DimensionMultiplier"></Binding>
+            <Binding Source="{RelativeSource Mode=FindAncestor, AncestorLevel=1, AncestorType={x:Type StackLayout}}" Path="Width"></Binding>
+            <Binding Source="{RelativeSource Mode=FindAncestor, AncestorLevel=1, AncestorType={x:Type StackLayout}}" Path="Height"></Binding>
+        </MultiBinding>
+    </ContentView.HeightRequest>
     
+    <ContentView.WidthRequest>
+        <MultiBinding Converter="{x:StaticResource calculate width}">
+            <Binding Source="{RelativeSource Mode=Self}" Path="DimensionMultiplier"></Binding>
+            <Binding Source="{RelativeSource Mode=FindAncestor, AncestorLevel=1, AncestorType={x:Type StackLayout}}" Path="Width"></Binding>
+            <Binding Source="{RelativeSource Mode=FindAncestor, AncestorLevel=1, AncestorType={x:Type StackLayout}}" Path="Height"></Binding>
+        </MultiBinding>
+    </ContentView.WidthRequest>
     
+
     <ContentView.Content>
         <Grid Padding="5" x:Name="grid">
             <Grid.ColumnDefinitions>
@@ -23,19 +41,31 @@
                 <RowDefinition Height="3*"></RowDefinition>
                 <RowDefinition Height="12*"></RowDefinition>
             </Grid.RowDefinitions>
-            
-            <Label x:Name="filepath_place" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Background="LightSteelBlue"></Label>
 
-            <Image x:Name="wallpaper" Background="White" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" HorizontalOptions="Center"
-                   WidthRequest="{Binding Source={RelativeSource Mode=Self}, Path=Height, Converter={StaticResource phoneWconvert}}" Source="images/plus_add.png"
-                   ></Image>
-
-            <Button Grid.Column="1" Grid.Row="1" HorizontalOptions="End" Text="DEL" x:Name="del_button" VerticalOptions="Center"></Button>
+            <ScrollView x:Name="filepath_place" Orientation="Horizontal" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2">
+                <Label x:Name="filepath_here" Background="LightBlue" TextColor="Black"></Label>
+            </ScrollView>
             
-            <StackLayout Background="LightPink" x:Name="to_store_del_swiftly" Grid.Column="1" Grid.Row="2" Orientation="Horizontal">
+            <Image x:Name="wallpaper" PropertyChanged="wallpaper_PropertyChanged" Aspect="AspectFill" Background="White" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" HorizontalOptions="Center"
+                   WidthRequest="{Binding Source={RelativeSource Mode=Self}, Path=Height, Converter={StaticResource phoneWconvert}}">
+                <Image.GestureRecognizers>
+                    <TapGestureRecognizer x:Name="img_almost" NumberOfTapsRequired="1" Tapped="img_almost_Tapped"></TapGestureRecognizer>
+                    <TapGestureRecognizer x:Name="source_img_really" NumberOfTapsRequired="2" Tapped="source_img_really_Tapped"></TapGestureRecognizer>
+                </Image.GestureRecognizers>
+            </Image>
+
+            <Image Source="images/delete.png" Aspect="AspectFit" Grid.Column="1" Grid.Row="1" HorizontalOptions="End" x:Name="del_almost_button" BackgroundColor="LightSalmon" VerticalOptions="Center"
+                   MinimumHeightRequest="50" MinimumWidthRequest="80">
+                <Image.GestureRecognizers>
+                    <TapGestureRecognizer x:Name="delete_touched" NumberOfTapsRequired="1" Tapped="delete_Touched"></TapGestureRecognizer>
+                    <TapGestureRecognizer NumberOfTapsRequired="2" Tapped="delete_Tapped"></TapGestureRecognizer>
+                </Image.GestureRecognizers>
+            </Image>
+            
+            <StackLayout x:Name="to_store_del_swiftly" Grid.Column="1" Grid.Row="2" Orientation="Horizontal" BackgroundColor="LightSteelBlue">
                 <StackLayout x:Name="timespan_panel"  HorizontalOptions="CenterAndExpand" VerticalOptions="Center" Padding="-2">
-                    <TimePicker x:Name="choose_start" PropertyChanged="TimePicker_PropertyChanged"></TimePicker>
-                    <TimePicker x:Name="choose_end" PropertyChanged="TimePicker_PropertyChanged"></TimePicker>
+                    <TimePicker x:Name="choose_start" PropertyChanged="TimePicker_PropertyChanged" IsEnabled="False"></TimePicker>
+                    <TimePicker x:Name="choose_end" PropertyChanged="TimePicker_PropertyChanged" IsEnabled="False"></TimePicker>
                 </StackLayout>
             </StackLayout>
             

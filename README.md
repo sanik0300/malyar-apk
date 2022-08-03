@@ -1,4 +1,6 @@
-#malyar-apk
-#ui 2.0
-I've changed the UI format to sequence of tiles that sometimes change size accordingly to an interval they represent
-Addition and deletion of intervals in the next commit :>
+**#malyar-apk**
+in this commit:
+- Fixed the API for adding/deleting time intervals +
+- More provident interface for adding new intervals +
+- Fewer inactive placeholder buttons :) +
+- had to sacrifice the SchedulePieces' change in size after every duration change -

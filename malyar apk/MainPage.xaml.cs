@@ -9,33 +9,45 @@ namespace malyar_apk
 {
     public partial class MainPage : ContentPage
     {
-        private double width = 0, height = 0;
-       
+        private double width = 0, height = 0;    
         bool horizontal;
 
         public MainPage()
         {
             InitializeComponent();
+            TimedPicturesLoader.IntervalDeleted += Interval_WasDeleted;
+            TimedPicturesLoader.IntervalInserted += Interval_WasInserted;
         }
 
-       private void InsertNewWallpaper()
-       {
-            schedule_container.Children.Add(new SeparatorCustom());
-            schedule_container.Children.Add(new SchedulePiece());         
-       }
+        private void Interval_WasInserted(object sender, TPModelAddedEventArgs args)
+        {
+            var SP = new SchedulePiece(sender as TimedPictureModel);
+            switch (args.howtoadd)
+            {
+                case AdditionMode.Insert:
+                    schedule_container.Children.Insert(args.PositionIndex, SP);
+                    break;
+                case AdditionMode.Replace:
+                    schedule_container.Children[args.PositionIndex] = SP;
+                    break;
+            }
+        }
+
+        private void Interval_WasDeleted(object sender, TPModelDeletedEventArgs args)
+        {
+            schedule_container.Children.RemoveAt(args.OldIndex);            
+        }
 
         protected override void OnAppearing()
         {          
             base.OnAppearing();
 
             ArrayList ArL = TimedPicturesLoader.InitExistingOnes();
-            if(ArL == null)
+            if(ArL == null) 
             {
-                schedule_container.Children.Add(new SchedulePiece(TimedPictureModel.just_original, TimeSpan.Zero, TimeSpan.FromDays(1)));//original wallpaper during the whole day
-                //for(int i =0; i<2; i++) { InsertNewWallpaper(); }
+                TimedPicturesLoader.FitIntervalIn(ChangeDirection.InsertNew, new TimedPictureModel(TimedPictureModel.just_original, TimeSpan.Zero, TimeSpan.FromDays(1)));//original wallpaper during the whole day
             }
-            else
-            {
+            else {
                 throw new NotImplementedException("ты как вообще сюда добрался");
             }          
         }
@@ -47,29 +59,47 @@ namespace malyar_apk
 
         private async void scroll_down_Clicked(object sender, EventArgs e)
         {
-            await scrollview.ScrollToAsync(0, scrollview.ContentSize.Height - scrollview.Height, true);
+            if (horizontal) {
+                await scrollview.ScrollToAsync(scrollview.ContentSize.Width - scrollview.Width, 0, true);
+            }
+            else {
+                await scrollview.ScrollToAsync(0, scrollview.ContentSize.Height - scrollview.Height, true);
+            }
         }
 
         private void scrollview_Scrolled(object sender, ScrolledEventArgs e)
         {
-            if (horizontal)
-            {
+            if (horizontal) {
                 scroll_up.IsEnabled = scrollview.ScrollX > schedule_container.Children[0].Width / 2;
                 scroll_down.IsEnabled = (scrollview.Width - scrollview.ScrollX) > schedule_container.Children.Last().Width / 2;
             }
-            else
-            {
+            else {
                 scroll_up.IsEnabled = scrollview.ScrollY > schedule_container.Children[0].Height / 2;
                 scroll_down.IsEnabled = (scrollview.Height - scrollview.ScrollY) > schedule_container.Children.Last().Height * (double)(schedule_container.Children.Count+1)/4;
             }
         }
 
-        private void addnew_Clicked(object sender, EventArgs e)
+        private string filepath_on_the_way = null;
+        private async void preview_Tapped(object sender, EventArgs e)
         {
-
+            FileResult result = await FilePicker.PickAsync(PickOptions.Images);
+            if (result == null)
+                return;
+            filepath_on_the_way = result.FullPath;
+            (sender as Image).Source = ImageSource.FromFile(result.FullPath);
+            
+            addnew.IsEnabled =  CheckConstructorCompleteness() && end_new.Time > begin_new.Time;
         }
 
-        private bool time_change_recursion = false;
+        private void addnew_Clicked(object sender, EventArgs e)
+        {
+            if (filepath_on_the_way == null)
+                return;
+
+            var model = new TimedPictureModel(filepath_on_the_way, begin_new.Time, whole_day.IsChecked && checkbox_pair.IsVisible ? TimeSpan.FromDays(1) : end_new.Time);
+            TimedPicturesLoader.FitIntervalIn(ChangeDirection.InsertNew, model);         
+        }
+
         private void time_picker_for_new_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName != "Time")
@@ -78,43 +108,29 @@ namespace malyar_apk
 
             checkbox_pair.IsVisible = pickers_up[1].Time == TimeSpan.Zero;
             if (checkbox_pair.IsVisible) {
-                whole_day_CheckedChanged(whole_day, new CheckedChangedEventArgs(whole_day.IsChecked));
+                addnew.IsEnabled = CheckConstructorCompleteness();
                 return; 
-            }//Отстать от юзера и дать шанс включить поддержку 24 часов
-
-            if (pickers_up[0].Time == pickers_up[1].Time &&!time_change_recursion)
-            {
-                if (pickers_up[0].Time.TotalMinutes < TimedPictureModel.MinLegitMinutesDelta)//если время выбрано от 00:00 до где-то 00:04
-                {
-                    pickers_up[1].Time = TimeSpan.FromMinutes(pickers_up[1].Time.TotalMinutes + TimedPictureModel.MinLegitMinutesDelta);
-                }
-                else
-                {
-                    pickers_up[0].Time = TimeSpan.FromMinutes(pickers_up[0].Time.TotalMinutes - TimedPictureModel.MinLegitMinutesDelta);
-                }
             }
-            time_change_recursion = false;
 
-            if (pickers_up[1].Time < pickers_up[0].Time)
-            {
-                TimeSpan temp = pickers_up[0].Time;
-                time_change_recursion = true;
-                pickers_up[0].Time = pickers_up[1].Time;
-                pickers_up[1].Time = temp;
-            }
+            addnew.IsEnabled = CheckConstructorCompleteness() && pickers_up[0].Time < pickers_up[1].Time;
+        }
+        private void whole_day_CheckedChanged(object sender, CheckedChangedEventArgs e) 
+        {
+            addnew.IsEnabled = CheckConstructorCompleteness();
         }
 
-        private void whole_day_CheckedChanged(object sender, CheckedChangedEventArgs e)
+        private bool CheckConstructorCompleteness()
         {
-            addnew.IsEnabled = e.Value && (sender as CheckBox).IsVisible;
+            end_new.Opacity = whole_day.IsChecked && checkbox_pair.IsVisible ? 0 : 1;
+
+            return filepath_on_the_way != null && (whole_day.IsChecked || !checkbox_pair.IsVisible);
         }
 
         protected override void OnSizeAllocated(double width, double height)
         {                                            
             if (this.width == width && this.height == height) { return; }
             horizontal = width > height;
-
-           
+     
             base.OnSizeAllocated(width, height);
 
             this.width = width;
@@ -129,12 +145,6 @@ namespace malyar_apk
             loading.IsVisible = horizontal;
             
             snek.Rotation = scroll_up.Rotation = scroll_down.Rotation = horizontal ? -90 : 0;
-
-            foreach(View view in schedule_container.Children)
-            {
-                view.HorizontalOptions = horizontal ? LayoutOptions.Start : LayoutOptions.FillAndExpand;
-                view.VerticalOptions = horizontal ? LayoutOptions.FillAndExpand : LayoutOptions.Start;
-            }
         }
     }
 }
