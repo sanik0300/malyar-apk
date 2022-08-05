@@ -54,13 +54,9 @@
                 </Image.GestureRecognizers>
             </Image>
 
-            <Image Source="images/delete.png" Aspect="AspectFit" Grid.Column="1" Grid.Row="1" HorizontalOptions="End" x:Name="del_almost_button" BackgroundColor="LightSalmon" VerticalOptions="Center"
-                   MinimumHeightRequest="50" MinimumWidthRequest="80">
-                <Image.GestureRecognizers>
-                    <TapGestureRecognizer x:Name="delete_touched" NumberOfTapsRequired="1" Tapped="delete_Touched"></TapGestureRecognizer>
-                    <TapGestureRecognizer NumberOfTapsRequired="2" Tapped="delete_Tapped"></TapGestureRecognizer>
-                </Image.GestureRecognizers>
-            </Image>
+            <ImageButton Source="images/delete.png" Aspect="AspectFit" Grid.Column="1" Grid.Row="1" HorizontalOptions="End" x:Name="del_button" BackgroundColor="LightSalmon" VerticalOptions="Center"
+                   MinimumHeightRequest="50" MinimumWidthRequest="80" Clicked="del_button_Clicked">
+            </ImageButton>
             
             <StackLayout x:Name="to_store_del_swiftly" Grid.Column="1" Grid.Row="2" Orientation="Horizontal" BackgroundColor="LightSteelBlue">
                 <StackLayout x:Name="timespan_panel"  HorizontalOptions="CenterAndExpand" VerticalOptions="Center" Padding="-2">

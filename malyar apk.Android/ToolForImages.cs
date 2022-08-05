@@ -58,9 +58,8 @@ namespace malyar_apk.Droid
                     Android.Views.View native_view = renderer.View;
 
                     Snackbar.Make(native_view, txt, 1200).Show();
-                    
-                    renderer.Dispose();
-                    return;          
+
+                    return;
                 }
             }
             

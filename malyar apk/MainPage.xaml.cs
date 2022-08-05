@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Xamarin.Essentials;
@@ -13,13 +15,13 @@ namespace malyar_apk
         bool horizontal;
 
         public MainPage()
-        {
-            InitializeComponent();
+        {          
+            InitializeComponent();  
             TimedPicturesLoader.IntervalDeleted += Interval_WasDeleted;
             TimedPicturesLoader.IntervalInserted += Interval_WasInserted;
         }
 
-        private void Interval_WasInserted(object sender, TPModelAddedEventArgs args)
+        private async void Interval_WasInserted(object sender, TPModelAddedEventArgs args)
         {
             var SP = new SchedulePiece(sender as TimedPictureModel);
             switch (args.howtoadd)
@@ -31,11 +33,57 @@ namespace malyar_apk
                     schedule_container.Children[args.PositionIndex] = SP;
                     break;
             }
+            (schedule_container.Children[0] as SchedulePiece).ProtectFromClickingDel(schedule_container.Children.Count > 1);
+            //Scroll to the center of newly added SP------------------
+            double scrollpos = GetScrollPosition(ref schedule_container, args.PositionIndex, horizontal);
+           
+            await scrollview.ScrollToAsync(horizontal ? scrollpos : 0, horizontal ? 0 : scrollpos, true);
+        }
+        private double GetScrollPosition(ref StackLayout layout, int target_view_position, bool horizontal)
+        {
+            double result=0;
+            if(target_view_position <= layout.Children.Count / 2)
+            {
+                if (horizontal)
+                {
+                    for (int i = 0; i < target_view_position; i++)
+                        result += layout.Children[i].Width;
+
+                    result += layout.Children[target_view_position].Width / 2; 
+                }
+                else {
+                    for (int i = 0; i < target_view_position; i++)
+                        result += layout.Children[i].Height;
+
+                    result += layout.Children[target_view_position].Height / 2;
+                }   
+            }
+            else {              
+                if (horizontal)
+                {
+                    result = layout.Width;
+                    
+                    for (int i = layout.Children.Count - 1; i > target_view_position; i--)
+                        result += layout.Children[i].Width;
+                    
+                    result -= layout.Children[target_view_position].Width / 2;
+                }
+                else {
+                    result = layout.Height;
+
+                    for (int i = layout.Children.Count - 1; i > target_view_position; i--)
+                        result += layout.Children[i].Height;
+
+                    result -= layout.Children[target_view_position].Height / 2;
+                }
+            }
+            return result;
         }
 
         private void Interval_WasDeleted(object sender, TPModelDeletedEventArgs args)
         {
-            schedule_container.Children.RemoveAt(args.OldIndex);            
+            schedule_container.Children.RemoveAt(args.OldIndex);
+            (schedule_container.Children[0] as SchedulePiece).ProtectFromClickingDel(schedule_container.Children.Count > 1);
         }
 
         protected override void OnAppearing()
@@ -49,7 +97,8 @@ namespace malyar_apk
             }
             else {
                 throw new NotImplementedException("ты как вообще сюда добрался");
-            }          
+            }
+            (schedule_container.Children[0] as SchedulePiece).ProtectFromClickingDel(schedule_container.Children.Count > 1);
         }
 
         private async void scroll_up_Clicked(object sender, EventArgs e)

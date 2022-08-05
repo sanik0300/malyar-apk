@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using Xamarin.Forms;
@@ -35,7 +36,7 @@ namespace malyar_apk
             int left_end = 0, right_end = _schedule.Count - 1, mid;
 
 
-            while (right_end - left_end > 1) 
+            do
             {
                 switch (comparer.Compare(TPM, _schedule[left_end]))
                 {
@@ -55,7 +56,7 @@ namespace malyar_apk
                         return right_end + 0.5;
                         break;
                 }
-                mid = (int)Math.Ceiling((float)left_end + right_end / 2);
+                mid = (int)Math.Ceiling((float)(left_end + right_end) / 2);
                 switch (comparer.Compare(TPM, _schedule[mid]))
                 {
                     case 0:
@@ -68,7 +69,8 @@ namespace malyar_apk
                         left_end = mid;
                         break;
                 }
-            }                  
+            }
+            while (right_end - left_end > 1);                   
 
             return comparer is CompareByStartTime? left_end + 0.5 : right_end+0.5;
         }
@@ -79,46 +81,50 @@ namespace malyar_apk
             int deletion_start = -1, deletion_range=0;
             int indx_to_clone = -1, insert_clone=-1;
             AdditionMode addmode = AdditionMode.Insert;
-            //Part 1-----------------------------
-            //Calculating where to delete
+            
             double[] span = new double[]
             {
                 get_position_in_schedule_with_bin_search(interval, new CompareByStartTime()),
                 get_position_in_schedule_with_bin_search(interval, new CompareByEndTime())
             };
-            newcomer_indx = (int)Math.Ceiling(span[0]);
 
-            if (span[1] - span[0] >= 1.5) 
-            {
-                deletion_start = (int)(span[0]+1);
-                while (span[1] - span[0] >= 1.5)
-                {
-                    for (int i = deletion_start + 1; i < span[1] - 1; i++) {
-                        deletion_range++;
-                    }
-                }
+            newcomer_indx = (int)Math.Ceiling(span[0]);
+            if(Math.Truncate(span[1]) == span[1] && _schedule.Count > 0) {
+                span[1] += 1; //Чтобы это значение в любом случае показывало сколько интервалов заканчиваются раньше данного
             }
 
+            //Part 1-----------------------------
+            //Calculating where to delete
+            int too_big_diff = (int)(Math.Truncate(span[1]) - Math.Ceiling(span[0]));
+            if (too_big_diff >= 2)
+            {
+                deletion_start = newcomer_indx;
+                deletion_range = too_big_diff;
+                
+                span[1] -= too_big_diff;
+            }
+            
+            //Part 2-----------------------------
             if (direction == ChangeDirection.InsertNew)//Needed only if we're inserting a new interval
             {
-                //Part 2-----------------------------
                 //Calculating where to replace or clone
                 switch (span[1] - span[0])
                 {
-                    case 0:
+                    case 0: //ровно внутри
                         indx_to_clone = newcomer_indx - 1;
                         insert_clone = newcomer_indx + 1;
                         break;
                     case 1:
-                        if (Math.Truncate(span[0]) == span[0])//данный интервал покрывает 2 интервала вплотную, первый из них заменяем а другой удаляем
-                        {
-                            deletion_start = newcomer_indx + 1;
+                        if (Math.Truncate(span[0]) == span[0]) {
                             addmode = AdditionMode.Replace;
-                            deletion_range = 1;
                         }
-                        //иначе новый интервал покрывает границу между 2 интервалами - вставляем его между, что было вышеуказано по умолчанию
                         break;
-                        //остаётся случай разницы в 0.5 - данный интервал начинается с начала или конца другого, но не закрывает его полностью
+                    case 1.5:
+                        addmode = AdditionMode.Replace;
+                        break;
+                    case 2:
+                        addmode = AdditionMode.Replace;
+                        break;
                 }
             }
 
@@ -159,22 +165,34 @@ namespace malyar_apk
             }
         }
 
+
         public static void DeleteInterval(TimedPictureModel interval)
         {   
             int my_old_indx = (int)get_position_in_schedule_with_bin_search(interval, new CompareByStartTime());
             //let's get to know which neighbouring interval lasts longer before deleting the current one
-            OverlapMode mode;
 
             if (my_old_indx == 0)
-                mode = OverlapMode.BeginNext;
+            {
+                _schedule[1].StartTime = TimeSpan.Zero;
+            }            
             else if (my_old_indx == _schedule.Count - 1)
-                mode = OverlapMode.ContinuePrevious;
+            {
+                _schedule[my_old_indx - 1].EndTime = TimeSpan.FromDays(1);
+            }
             else
-                mode = (_schedule[my_old_indx - 1].DurationInMinutes > _schedule[my_old_indx + 1].DurationInMinutes)? OverlapMode.BeginNext : OverlapMode.ContinuePrevious;
+            {
+                if (_schedule[my_old_indx - 1].DurationInMinutes > _schedule[my_old_indx + 1].DurationInMinutes)
+                {  
+                     _schedule[my_old_indx - 1].Join(_schedule[my_old_indx + 1], ChangeDirection.AffectDownwards);   
+                }
+                else {
+                    _schedule[my_old_indx + 1].Join(_schedule[my_old_indx - 1], ChangeDirection.AffectUpwards);
+                }
+            }
  
             _schedule.RemoveAt(my_old_indx);//i'm not complicating, this way is faster
 
-            IntervalDeleted.Invoke(null, new TPModelDeletedEventArgs(my_old_indx));            
+            IntervalDeleted.Invoke(null, new TPModelDeletedEventArgs(my_old_indx));
         }
     }
 
@@ -182,8 +200,4 @@ namespace malyar_apk
     /// Used during addition of new intervals
     /// </summary>
     public enum AdditionMode : byte { Insert, Replace }
-    /// <summary>
-    /// Used during deletion of an interval to specify which of neighbouring intervals should be extended to fill the gap
-    /// </summary>
-    public enum OverlapMode : byte { ContinuePrevious, BeginNext }
 }

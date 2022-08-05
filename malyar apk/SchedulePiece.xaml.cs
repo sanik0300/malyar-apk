@@ -46,11 +46,11 @@ namespace malyar_apk
         }
 
         public SchedulePiece(TimedPictureModel model)
-        {                
+        {
             this.actual_schedule_part = model;
             model.PropertyChanged += schedule_part_PropertyChanged;
             
-            InitializeComponent();
+            InitializeComponent();     
      
             this.choose_start.Time = model.start_time;
             this.choose_end.Time = TimedPictureModel.ClampTimespan(model.end_time);
@@ -98,14 +98,14 @@ namespace malyar_apk
 
             if (!horizontal && actual_schedule_part.DurationInMinutes < HRZ_Switch_Minutes && previous_count_of_minutes >= HRZ_Switch_Minutes)
             {
-                grid.Children.Remove(del_almost_button);
-                to_store_del_swiftly.Children.Add(del_almost_button);
+                grid.Children.Remove(del_button);
+                to_store_del_swiftly.Children.Add(del_button);
             }
 
             if (horizontal || (actual_schedule_part.DurationInMinutes >= HRZ_Switch_Minutes && previous_count_of_minutes < HRZ_Switch_Minutes))
             {
-                to_store_del_swiftly.Children.Remove(del_almost_button);
-                grid.Children.Add(del_almost_button, 1, 1);
+                to_store_del_swiftly.Children.Remove(del_button);
+                grid.Children.Add(del_button, 1, 1);
             }
 
             if (!horizontal && actual_schedule_part.DurationInMinutes <= ROWSP_Switch_Minutes && previous_count_of_minutes > ROWSP_Switch_Minutes)
@@ -193,10 +193,31 @@ namespace malyar_apk
             (sender as Image).Source = ImageSource.FromFile(result.FullPath);
         }
 
-        private void delete_Touched(object sender, EventArgs e) { mediator.DeliverToast("Жмите 2 раза, чтобы удалить"); }
-        private void delete_Tapped(object sender, EventArgs e)
+        private byte ClicksCount = 0;
+        private void del_button_Clicked(object sender, EventArgs e)
         {
-            TimedPicturesLoader.DeleteInterval(this.actual_schedule_part);
+            TimeSpan tt = new TimeSpan(0, 0, 0, 0, 600);
+            Device.StartTimer(tt, PotentialDeleteCallback);
+            ClicksCount++;
+        }
+        private bool PotentialDeleteCallback()
+        {
+            switch (ClicksCount)
+            {
+                case 1:
+                    mediator.DeliverToast("Жмите 2 раза, чтобы удалить");
+                    break;
+                case 2:
+                    TimedPicturesLoader.DeleteInterval(this.actual_schedule_part);
+                    break;
+            }
+            ClicksCount = 0;
+            return false;
+        }
+
+        public void ProtectFromClickingDel(bool can_we_del)
+        {
+            this.del_button.IsEnabled = this.del_button.IsVisible = can_we_del;
         }
     }
 }

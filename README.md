@@ -1,6 +1,5 @@
-**#malyar-apk**
+**#malyar-apk** (enough with) ui 2.0
 in this commit:
-- Fixed the API for adding/deleting time intervals +
-- More provident interface for adding new intervals +
-- Fewer inactive placeholder buttons :) +
-- had to sacrifice the SchedulePieces' change in size after every duration change -
+- resolved the crash during intervals deletion
+- ...and the crash during the attempt to show a snackbar
+- refactored the insertion algorithm to deal with overlapping intervals
