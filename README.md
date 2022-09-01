@@ -1,5 +1,5 @@
-**#malyar-apk** (enough with) ui 2.0
+**#malyar-apk**
 in this commit:
-- resolved the crash during intervals deletion
-- ...and the crash during the attempt to show a snackbar
-- refactored the insertion algorithm to deal with overlapping intervals
+- added json [de]serialization
+- fixed the crash during orientation change
+- implemented correct overlapping of time intervals during their duration change
