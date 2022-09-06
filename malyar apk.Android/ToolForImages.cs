@@ -138,8 +138,12 @@ namespace malyar_apk.Droid
             builder = builder.SetContent(remote_view).SetSmallIcon(Resource.Drawable.save_small_icon);
 
             manager.Notify(1, builder.Build());
-            await Task.Delay(2000);
-            manager.Cancel(1);
+            #if !DEBUG
+                await Task.Delay(2000);
+                manager.Cancel(1);
+            #endif
+            builder.Dispose();
+            manager.Dispose();
         }
 
         public void OnScheduleSaved()

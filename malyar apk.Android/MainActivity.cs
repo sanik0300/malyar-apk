@@ -7,6 +7,7 @@ using Android.Content;
 using Xamarin.Forms;
 using malyar_apk.Shared;
 using System.IO;
+using Android.Support.V4.Content;
 
 namespace malyar_apk.Droid
 {
@@ -15,11 +16,13 @@ namespace malyar_apk.Droid
     {
         static public MainActivity Current { get; private set; }
         private IdlenessEndReceiver idleness_receiver;
+        public bool InForeground { get; private set; }
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
             Current = this;
+            this.InForeground = false;
 
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
@@ -35,8 +38,7 @@ namespace malyar_apk.Droid
 
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
         }
-
-
+ 
         public void StartIO(string filepath, bool save, IList<TimedPictureModel> models = null)
         {
             PendingIntent pi = this.CreatePendingResult(save ? AndroidConstants.TaskCode_Save : AndroidConstants.TaskCode_Load, new Intent(), 0);
@@ -55,7 +57,7 @@ namespace malyar_apk.Droid
             }
 
             var PM = (PowerManager)GetSystemService(Context.PowerService);
-            if (Build.VERSION.SdkInt >= BuildVersionCodes.KitkatWatch && PM.IsInteractive || Build.VERSION.SdkInt < BuildVersionCodes.KitkatWatch && PM.IsScreenOn)
+            if (InForeground && (Build.VERSION.SdkInt >= BuildVersionCodes.KitkatWatch && PM.IsInteractive || Build.VERSION.SdkInt < BuildVersionCodes.KitkatWatch && PM.IsScreenOn))
             {
                 this.StartService(intent);
             }
@@ -64,6 +66,7 @@ namespace malyar_apk.Droid
                 idleness_receiver = new IdlenessEndReceiver(intent);
                 IntentFilter filter = new IntentFilter(PowerManager.ActionDeviceIdleModeChanged);
                 filter.AddAction(Intent.ActionScreenOn);
+                filter.AddAction(AndroidConstants.START_IO_LOCAL);
                 RegisterReceiver(idleness_receiver, filter);
             }       
         }
@@ -99,5 +102,27 @@ namespace malyar_apk.Droid
                     break;
             }
         }
+
+        protected override void OnPause()
+        {
+            base.OnPause();
+            InForeground = false;
+        }
+
+        protected override void OnResume()
+        {
+            base.OnResume();
+            InForeground = true;
+            if (idleness_receiver == null)
+                return;
+            this.SendBroadcast(new Intent(AndroidConstants.START_IO_LOCAL));
+        }
+
+        protected override void OnStop()
+        {
+            base.OnStop();
+            InForeground = false;
+        }
+
     }
 }

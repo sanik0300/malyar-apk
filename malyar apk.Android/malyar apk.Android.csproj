@@ -131,9 +131,6 @@
     <AndroidResource Include="Resources\drawable\save_small_icon.png" />
   </ItemGroup>
   <ItemGroup>
-    <AndroidResource Include="Resources\layout\transparent_brick.xml" />
-  </ItemGroup>
-  <ItemGroup>
     <AndroidResource Include="Resources\drawable\separator_for_notifications.xml" />
   </ItemGroup>
   <ItemGroup>

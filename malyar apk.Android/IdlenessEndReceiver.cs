@@ -23,7 +23,11 @@ namespace malyar_apk.Droid
 
         public override void OnReceive(Context context, Intent intent)
         {
+            if (!(context as MainActivity).InForeground)
+                return;
+            //because let's avoid that exception "not allowed to staer service"
             context.StartService(PostponedIntent);
+            
         }
     }
 }

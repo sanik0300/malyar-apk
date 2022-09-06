@@ -9,6 +9,7 @@ namespace malyar_apk.Droid
                               IO_SAVE_KEY = "SAVE",
                               RESULT_SERIALIZED = "SERIALIZED",
                               RESULT_DESERIALIZED = "DESERIAL",
-                              FILEPATH_EXTRA_KEY = "PATH";
+                              FILEPATH_EXTRA_KEY = "PATH",
+                              START_IO_LOCAL = "START_IO";
     }
 }

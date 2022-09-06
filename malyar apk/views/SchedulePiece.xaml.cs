@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using malyar_apk.Shared;
 using Xamarin.Essentials;
@@ -27,6 +26,7 @@ namespace malyar_apk
         private double previous_count_of_minutes = Constants.MinutesPerWallpaperByDefault;
         private bool has_initialized = false,
                             property_changing_from_inside = false;
+        private byte shrink_rate = 0;
 
         public event EventHandler SaveableChangeWasDone;
 
@@ -104,8 +104,8 @@ namespace malyar_apk
 
         private double width = 0, height = 0;
         protected override void OnSizeAllocated(double width, double height)
-        {            
-            if (this.width == width && this.height==height) { return; }
+        {
+            if (this.width == width && this.height == height) { return; }
             bool horizontal = DeviceDisplay.MainDisplayInfo.Width > DeviceDisplay.MainDisplayInfo.Height;
 
             base.OnSizeAllocated(width, height);
@@ -117,49 +117,60 @@ namespace malyar_apk
                 return;
 
             timespan_panel.Orientation = !horizontal && actual_schedule_part.DurationInMinutes < HRZ_Switch_Minutes ? StackOrientation.Horizontal : StackOrientation.Vertical;
-            akaphone.Padding = new Thickness(12 * DimensionMultiplier);
+            akaphone.Padding = new Thickness(10 * DimensionMultiplier);
 
-            if (!horizontal && actual_schedule_part.DurationInMinutes < HRZ_Switch_Minutes && previous_count_of_minutes >= HRZ_Switch_Minutes)
+            double change = actual_schedule_part.DurationInMinutes / previous_count_of_minutes;
+            if (change > 1)//if this' interval became longer
             {
-                grid.Children.Remove(del_button);
-                to_store_del_swiftly.Children.Add(del_button);
+                if (horizontal || (actual_schedule_part.DurationInMinutes > ROWSP_Switch_Minutes && shrink_rate > 1))
+                {
+                    grid.RowDefinitions[0].Height = 20;
+
+                    Grid.SetColumn(filepath_place, 0);
+                    Grid.SetColumnSpan(filepath_place, 2);
+
+                    Grid.SetRow(akaphone, 1);
+                    Grid.SetRowSpan(akaphone, 2);
+
+                    Grid.SetRow(to_store_del_swiftly, 2);
+                    Grid.SetRowSpan(to_store_del_swiftly, 1);
+
+                    shrink_rate--;
+                }
+                
+                if (horizontal || (actual_schedule_part.DurationInMinutes >= HRZ_Switch_Minutes && shrink_rate > 0))
+                {
+                    to_store_del_swiftly.Children.Remove(del_button);
+                    grid.Children.Add(del_button, 1, 1);
+                    shrink_rate--;
+                }
             }
+            else {
+                if (!horizontal && actual_schedule_part.DurationInMinutes < HRZ_Switch_Minutes && shrink_rate < 1)
+                {
+                    grid.Children.Remove(del_button);
+                    to_store_del_swiftly.Children.Add(del_button);
+                    shrink_rate++;
+                }
+                if (!horizontal && actual_schedule_part.DurationInMinutes <= ROWSP_Switch_Minutes && shrink_rate < 2)
+                {
+                    grid.RowDefinitions[0].Height = 15;
 
-            if (horizontal || (actual_schedule_part.DurationInMinutes >= HRZ_Switch_Minutes && previous_count_of_minutes < HRZ_Switch_Minutes))
-            {
-                to_store_del_swiftly.Children.Remove(del_button);
-                grid.Children.Add(del_button, 1, 1);
-            }
+                    Grid.SetColumn(filepath_place, 1);
+                    Grid.SetColumnSpan(filepath_place, 1);
 
-            if (!horizontal && actual_schedule_part.DurationInMinutes <= ROWSP_Switch_Minutes && previous_count_of_minutes > ROWSP_Switch_Minutes)
-            {
-                grid.RowDefinitions[0].Height = 15;
+                    Grid.SetRow(akaphone, 0);
+                    Grid.SetRowSpan(akaphone, 3);
 
-                Grid.SetColumn(filepath_place, 1);
-                Grid.SetColumnSpan(filepath_place, 1);
+                    Grid.SetRow(to_store_del_swiftly, 1);
+                    Grid.SetRowSpan(to_store_del_swiftly, 2);
 
-                Grid.SetRow(akaphone, 0);
-                Grid.SetRowSpan(akaphone, 3);
-
-                Grid.SetRow(to_store_del_swiftly, 1);
-                Grid.SetRowSpan(to_store_del_swiftly, 2);
-            }
-            else if (horizontal || (actual_schedule_part.DurationInMinutes >= ROWSP_Switch_Minutes && previous_count_of_minutes < ROWSP_Switch_Minutes))
-            {
-                grid.RowDefinitions[0].Height = 20;
-
-                Grid.SetColumn(filepath_place, 0);
-                Grid.SetColumnSpan(filepath_place, 2);
-
-                Grid.SetRow(akaphone, 1);
-                Grid.SetRowSpan(akaphone, 2);
-
-                Grid.SetRow(to_store_del_swiftly, 2);
-                Grid.SetRowSpan(to_store_del_swiftly, 1);
-            }
+                    shrink_rate++;
+                }
+            } 
         }
 
-        private void TimePicker_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private void TimePicker_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (this==null || e.PropertyName != "Time")
                 return;
@@ -168,6 +179,7 @@ namespace malyar_apk
 
             if (!has_initialized) { return; }
                
+            previous_count_of_minutes = actual_schedule_part.DurationInMinutes;
             if (!property_changing_from_inside)
             {
                 if (choose_start.Time >= choose_end.Time && actual_schedule_part.end_time.Days == 0)
@@ -181,7 +193,6 @@ namespace malyar_apk
                     return;
                 }
               
-                previous_count_of_minutes = actual_schedule_part.DurationInMinutes;
                 if (sender == choose_end) {
                     if(choose_end.Time == TimeSpan.Zero) {
                         actual_schedule_part.end_time = TimeSpan.FromDays(1);

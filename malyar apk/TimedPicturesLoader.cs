@@ -34,7 +34,7 @@ namespace malyar_apk
                 mediator.BeginLoadingSchedule();
                 return true;
             }
-
+          
             _schedule = new List<TimedPictureModel>(24 / (Constants.MinutesPerWallpaperByDefault/60));   
             return false;
         }
@@ -48,10 +48,6 @@ namespace malyar_apk
         public static event EventHandler<TPModelAddedEventArgs> IntervalInserted;
         public static event EventHandler<TPModelDeletedEventArgs> IntervalDeleted;
 
-        //public static uint PreviousScheduleCount { get; private set; }
-        /*public static void OnScheduleChanged() { 
-            PreviousScheduleCount = (uint)_schedule.Count; 
-        }*/
         private static double get_position_in_schedule_with_bin_search(TimedPictureModel TPM, IComparer<TimedPictureModel> comparer, int start = -1, int end = -1)
         {
             if (_schedule.Count == 0) {
@@ -104,22 +100,20 @@ namespace malyar_apk
         public static void FitIntervalIn(ChangeDirection direction, TimedPictureModel interval)
         {
             int newcomer_indx;
-            int deletion_start = -1, deletion_range=0;
-            int indx_to_clone = -1, insert_clone=-1;
+            int deletion_start = -1, deletion_range = 0;
+            int indx_to_clone = -1, insert_clone = -1;
             AdditionMode addmode = AdditionMode.Insert;
 
             double[] span;
             switch (direction)//Why not make it easier for the algorithm to count :)
             {
                 case ChangeDirection.AffectUpwards:
-                    double max = get_position_in_schedule_with_bin_search(interval, new CompareByEndTime());
-                    span = new double[] {
-                                    get_position_in_schedule_with_bin_search(interval, new CompareByStartTime(), -1, (int)max-1), max };
+                    int max = (int)get_position_in_schedule_with_bin_search(interval, new CompareByEndTime());
+                    span = new double[] { get_position_in_schedule_with_bin_search(interval, new CompareByStartTime(), -1, max-1), max };
                     break;
                 case ChangeDirection.AffectDownwards:
-                    double min = get_position_in_schedule_with_bin_search(interval, new CompareByStartTime());
-                    span = new double[] {
-                                    min, get_position_in_schedule_with_bin_search(interval, new CompareByEndTime(), (int)min+1) };
+                    int min = (int)get_position_in_schedule_with_bin_search(interval, new CompareByStartTime());
+                    span = new double[] { min, get_position_in_schedule_with_bin_search(interval, new CompareByEndTime(), min+1) };
                     break;
                 default:
                     span = new double[] {
@@ -130,7 +124,7 @@ namespace malyar_apk
             }
 
             newcomer_indx = (int)Math.Ceiling(span[0]);
-            if(Math.Truncate(span[1]) == span[1] && _schedule.Count > 0) {
+            if (Math.Truncate(span[1]) == span[1] && _schedule.Count > 0) {
                 span[1] += 1; //Чтобы это значение в любом случае показывало сколько интервалов заканчиваются раньше данного
             }
 
@@ -139,75 +133,87 @@ namespace malyar_apk
             int too_big_diff = (int)(Math.Truncate(span[1]) - Math.Ceiling(span[0]));
             if (too_big_diff >= 2)
             {
-                deletion_start =  newcomer_indx;
+                deletion_start = newcomer_indx;
                 deletion_range = too_big_diff;
 
-                if (direction != ChangeDirection.InsertNew) 
+                if (direction != ChangeDirection.InsertNew)
                 {
-                    if(direction == ChangeDirection.AffectDownwards) { deletion_start += 1; }
+                    if (direction == ChangeDirection.AffectDownwards) { deletion_start += 1; }
                     deletion_range -= 1;
                 }
-
                 span[1] -= too_big_diff;
             }
-            
-            //Part 2-----------------------------
-            if (direction == ChangeDirection.InsertNew)//Needed only if we're inserting a new interval
-            {
-                //Calculating where to replace or clone
-                switch (span[1] - span[0])
-                {
-                    case 0: //ровно внутри
-                        indx_to_clone = newcomer_indx - 1;
-                        insert_clone = newcomer_indx + 1;
-                        break;
-                    case 1:
-                        if (Math.Truncate(span[0]) == span[0]) {
-                            addmode = AdditionMode.Replace;
-                        }
-                        break;
-                    case 1.5:
-                        addmode = AdditionMode.Replace;
-                        break;
-                    case 2:
-                        addmode = AdditionMode.Replace;
-                        break;
-                }
-            }
 
-            //Part 3------------------------------
-            //Reordering the _schedule
-            if (deletion_start >= 0) {
+            //Part 2---------
+            //Delete the overlapped intervals
+            if (deletion_start >= 0)  {
                 _schedule.RemoveRange(deletion_start, deletion_range);
-                for (int i = 0; i < deletion_range; ++i)
-                {
+                for (int i = 0; i < deletion_range; ++i) {
                     IntervalDeleted.Invoke(null, new TPModelDeletedEventArgs(deletion_start));
                 }
             }
 
-            if (direction == ChangeDirection.InsertNew)//Also do only if we're inserting a new interval
-            {
-                if (addmode == AdditionMode.Insert) {
-                    _schedule.Insert(newcomer_indx, interval);
+            //Part 3---------------------------
+            //Needed only if we're inserting a new interval
+            if (direction == ChangeDirection.InsertNew)
+            {            
+                if (_schedule.Count >= 2 && (interval.path_to_wallpaper == _schedule[(int)span[0]].path_to_wallpaper || interval.path_to_wallpaper == _schedule[(int)span[1]].path_to_wallpaper))
+                {
+                    if (span[1] - span[0] >= 1)
+                    {
+                        if(interval.path_to_wallpaper == _schedule[(int)span[0]].path_to_wallpaper)  {
+                            _schedule[(int)span[0]].EndTime = TimeSpan.FromMinutes(interval.end_time.TotalMinutes);
+                        }
+                        else {
+                            _schedule[(int)span[1]].StartTime = TimeSpan.FromMinutes(interval.start_time.TotalMinutes);
+                        }
+                    }
+                    else { return; }//это всё, тикаем отсюда
                 }
-                else {
-                    _schedule[newcomer_indx] = interval;
-                }
-                IntervalInserted.Invoke(interval, new TPModelAddedEventArgs(newcomer_indx, addmode));
+                else {               
+                    switch (span[1] - span[0])//Calculating where to replace or clone
+                    {
+                        case 0: //ровно внутри
+                            indx_to_clone = newcomer_indx - 1;
+                            insert_clone = newcomer_indx + 1;
+                            break;
+                        case 0.5:
+                            break;//it is left as Insert
+                        case 1:
+                            if (Math.Truncate(span[0]) == span[0]) {
+                                addmode = AdditionMode.Replace;
+                            }
+                            break;
+                        default://1.5 or 2
+                            addmode = AdditionMode.Replace;
+                            break;
+                    }
 
-                if (indx_to_clone >= 0) {
-                    var another_one = _schedule[indx_to_clone].Clone() as TimedPictureModel;
-                    _schedule.Insert(insert_clone, another_one);
-                    IntervalInserted.Invoke(another_one, new TPModelAddedEventArgs(insert_clone, AdditionMode.Insert));
+                    if (addmode == AdditionMode.Insert) {
+                        _schedule.Insert(newcomer_indx, interval);
+                    }
+                    else {
+                        _schedule[newcomer_indx] = interval;
+                    }
+                    IntervalInserted.Invoke(interval, new TPModelAddedEventArgs(newcomer_indx, addmode));
+
+                    if (indx_to_clone >= 0)
+                    {
+                        var another_one = _schedule[indx_to_clone].Clone() as TimedPictureModel;
+                        _schedule.Insert(insert_clone, another_one);
+                        IntervalInserted.Invoke(another_one, new TPModelAddedEventArgs(insert_clone, AdditionMode.Insert));
+                    }
                 }
             }
 
             //Part 4-----------------
             //Connecting intervals together
-            if(newcomer_indx > 0 || direction==ChangeDirection.AffectUpwards && newcomer_indx > 0) {
+            if (newcomer_indx > 0 || direction == ChangeDirection.AffectUpwards && newcomer_indx > 0)
+            {
                 _schedule[newcomer_indx].Join(_schedule[newcomer_indx - 1], ChangeDirection.AffectUpwards);
             }
-            if( newcomer_indx < _schedule.Count - 1 && direction!=ChangeDirection.AffectUpwards) {
+            if (newcomer_indx < _schedule.Count - 1 && direction != ChangeDirection.AffectUpwards)
+            {
                 _schedule[newcomer_indx].Join(_schedule[newcomer_indx + 1], ChangeDirection.AffectDownwards);
             }
         }
@@ -239,6 +245,8 @@ namespace malyar_apk
 
             IntervalDeleted.Invoke(null, new TPModelDeletedEventArgs(my_old_indx));
         }
+
+        //private static void MergeIntervals(int first_TPM_indx) { }
     }
 
     /// <summary>

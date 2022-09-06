@@ -5,22 +5,6 @@
              xmlns:local="clr-namespace:malyar_apk"
              Background="SteelBlue" MinimumHeightRequest="100">
 
-    <!--ContentView.HeightRequest>
-        <MultiBinding Converter="{x:StaticResource calculate_height}">
-            <Binding Source="{RelativeSource Mode=Self}" Path="DimensionMultiplier"></Binding>
-            <Binding Source="{RelativeSource Mode=FindAncestor, AncestorLevel=1, AncestorType={x:Type StackLayout}}" Path="Width"></Binding>
-            <Binding Source="{RelativeSource Mode=FindAncestor, AncestorLevel=1, AncestorType={x:Type StackLayout}}" Path="Height"></Binding>
-        </MultiBinding>
-    </ContentView.HeightRequest>
-    
-    <ContentView.WidthRequest>
-        <MultiBinding Converter="{x:StaticResource calculate width}">
-            <Binding Source="{RelativeSource Mode=Self}" Path="DimensionMultiplier"></Binding>
-            <Binding Source="{RelativeSource Mode=FindAncestor, AncestorLevel=1, AncestorType={x:Type StackLayout}}" Path="Width"></Binding>
-            <Binding Source="{RelativeSource Mode=FindAncestor, AncestorLevel=1, AncestorType={x:Type StackLayout}}" Path="Height"></Binding>
-        </MultiBinding>
-    </ContentView.WidthRequest-->   
-
     <ContentView.Content>
         <Grid Padding="5" x:Name="grid">
             <Grid.ColumnDefinitions>
