@@ -110,7 +110,7 @@ namespace malyar_apk.Droid
         }
 
         protected override void OnResume()
-        {
+        {    
             base.OnResume();
             InForeground = true;
             if (idleness_receiver == null)

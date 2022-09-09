@@ -13,7 +13,7 @@ namespace malyar_apk
     {
         private double width = 0, height = 0;    
         bool horizontal;
-
+        private bool user_went_to_other_page = false, has_initialized = false;
         public MainPage()
         {          
             InitializeComponent();
@@ -40,6 +40,7 @@ namespace malyar_apk
             }
             (sender as IMagesMediator).DeliverToast("Загружено успешно");
             (schedule_container.Children[0] as SchedulePiece).ProtectFromClickingDel(schedule_container.Children.Count > 1);
+            has_initialized = true;
         }
 
         private void OnSaveableChangeWasDone(object sender, EventArgs e) { save.IsEnabled = true; }
@@ -130,6 +131,13 @@ namespace malyar_apk
         {
             base.OnAppearing();
 
+            if (user_went_to_other_page) {
+                user_went_to_other_page = false;
+                return;
+            }
+            
+            if (has_initialized) {return;}               
+
             if (TimedPicturesLoader.CheckOutExistingOnes())
                 return;
 
@@ -217,7 +225,13 @@ namespace malyar_apk
             TimedPicturesLoader.TryToSaveExistingOnes();
             save.IsEnabled = false;
         }
-       
+
+        private async void to_settings_Clicked(object sender, EventArgs e)
+        {
+            user_went_to_other_page = true;
+            await Navigation.PushAsync(new SettingsPage());
+        }
+
         protected override void OnSizeAllocated(double width, double height)
         {                                            
             if (this.width == width && this.height == height) { return; }
@@ -235,6 +249,9 @@ namespace malyar_apk
             schedule_container.Orientation = horizontal ? StackOrientation.Horizontal : StackOrientation.Vertical;//панель которая содержит сами обои
             snek.IsVisible = !horizontal;
             loading.IsVisible = horizontal;
+
+            scroll_up.Rotation = horizontal ? -90 : 0;
+            scroll_down.Rotation = horizontal ? 90 : 180;
         }
     }
 }

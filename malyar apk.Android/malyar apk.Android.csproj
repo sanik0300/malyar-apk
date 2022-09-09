@@ -111,9 +111,6 @@
     <AndroidResource Include="Resources\drawable\scroll.png" />
   </ItemGroup>
   <ItemGroup>
-    <AndroidResource Include="Resources\drawable\scrolldown.png" />
-  </ItemGroup>
-  <ItemGroup>
     <AndroidResource Include="Resources\drawable\settings_icon.png" />
   </ItemGroup>
   <ItemGroup>

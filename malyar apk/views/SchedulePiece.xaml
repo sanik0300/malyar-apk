@@ -22,7 +22,7 @@
             </ScrollView>
 
             <!--yeeee make it really look like a phone :DD-->
-            <local:PhoneFrame x:Name="akaphone" Background="LightGray" BorderColor="Black" CornerRadius="10"  Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" VerticalOptions="Center" HorizontalOptions="Center">
+            <local:PhoneFrame x:Name="akaphone" Background="DarkGray" BorderColor="Black" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" VerticalOptions="Center" HorizontalOptions="Center">
                 <Image x:Name="wallpaper" PropertyChanged="wallpaper_PropertyChanged" Aspect="AspectFill">
                     <Image.GestureRecognizers>
                         <TapGestureRecognizer x:Name="img_almost" NumberOfTapsRequired="1" Tapped="img_almost_Tapped"></TapGestureRecognizer>

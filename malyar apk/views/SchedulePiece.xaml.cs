@@ -25,7 +25,7 @@ namespace malyar_apk
         private TimedPictureModel actual_schedule_part;
         private double previous_count_of_minutes = Constants.MinutesPerWallpaperByDefault;
         private bool has_initialized = false,
-                            property_changing_from_inside = false;
+                     property_changing_from_inside = false;
         private byte shrink_rate = 0;
 
         public event EventHandler SaveableChangeWasDone;
@@ -113,11 +113,14 @@ namespace malyar_apk
             this.width = width;
             this.height = height;
 
+            double padding_coef = Math.Max(2, 10 * DimensionMultiplier);
+            akaphone.CornerRadius = (float)padding_coef;
+            akaphone.Padding = new Thickness(padding_coef);
+            
             if (previous_count_of_minutes >= Constants.MinutesPerWallpaperByDefault && actual_schedule_part.DurationInMinutes >= Constants.MinutesPerWallpaperByDefault)
                 return;
 
-            timespan_panel.Orientation = !horizontal && actual_schedule_part.DurationInMinutes < HRZ_Switch_Minutes ? StackOrientation.Horizontal : StackOrientation.Vertical;
-            akaphone.Padding = new Thickness(10 * DimensionMultiplier);
+            timespan_panel.Orientation = !horizontal && actual_schedule_part.DurationInMinutes < HRZ_Switch_Minutes ? StackOrientation.Horizontal : StackOrientation.Vertical;           
 
             double change = actual_schedule_part.DurationInMinutes / previous_count_of_minutes;
             if (change > 1)//if this' interval became longer

@@ -10,11 +10,15 @@ namespace malyar_apk
         {
             InitializeComponent();
 
-            MainPage = new MainPage();
+            if(Device.RuntimePlatform == Device.Android) {
+                MainPage = new NavigationPage(new MainPage()) { BarBackgroundColor = Color.BlueViolet };
+            }
+            else { new MainPage(); }
         }
 
         protected override void OnStart()
         {
+
         }
 
         protected override void OnSleep()
