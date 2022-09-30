@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.ComponentModel;
 using System.IO;
 using malyar_apk.Shared;
@@ -21,11 +22,13 @@ namespace malyar_apk
         private static int ROWSP_Switch_Minutes = Constants.MinutesPerWallpaperByDefault / 4;  
         private static int MinMinutesToShowHRZ= 90, MinMinutesToShowVERT = 60;
 
-        private static IMagesMediator mediator = DependencyService.Get<IMagesMediator>();
+        private static IUXMediator mediator = DependencyService.Get<IUXMediator>();
+        
         private TimedPictureModel actual_schedule_part;
         private double previous_count_of_minutes = Constants.MinutesPerWallpaperByDefault;
         private bool has_initialized = false,
-                     property_changing_from_inside = false;
+                     property_changing_from_inside = false,
+                     image_defect = false;
         private byte shrink_rate = 0;
 
         public event EventHandler SaveableChangeWasDone;
@@ -41,6 +44,7 @@ namespace malyar_apk
             }
         }
 
+        static internal bool worth_asking_for_file = true;//first launch значит разрешений ещё не дали
         public SchedulePiece(TimedPictureModel model)
         {
             this.actual_schedule_part = model;
@@ -50,17 +54,27 @@ namespace malyar_apk
             this.choose_start.Time = model.start_time;
             this.choose_end.Time = TimedPictureModel.ClampTimespan(model.end_time);
 
-            if (model.path_to_wallpaper == TimedPictureModel.just_original || model.path_to_wallpaper == null)
-            {
-                wallpaper.Source = ImageSource.FromStream(() => new MemoryStream(mediator.GetOriginalWP()));
-                model.path_to_wallpaper = TimedPictureModel.just_original;//на всякий случай, а то эта переменная чё-то может пропадать в процессе
+            if (worth_asking_for_file) {
+                UpdateImgRepresentation();
             }
-            else { 
-                wallpaper.Source = ImageSource.FromFile(model.path_to_wallpaper);     
+            else {
+                image_defect = true;
+                MessagingCenter.Subscribe<IOMediator>(this, Constants.UpdateImg, OnMessageReceived);
+                this.filepath_here.Text = model.path_to_wallpaper.Insert(0, "(НЕТ ДОСТУПА) ");
             }
-            this.filepath_here.Text = model.path_to_wallpaper.ToLower();
-  
-            has_initialized = true;
+           has_initialized = true;
+        }
+        private void OnMessageReceived(IOMediator sender)
+        {
+            UpdateImgRepresentation();
+            MessagingCenter.Unsubscribe<IOMediator>(this, Constants.UpdateImg);
+        }
+        private void UpdateImgRepresentation()
+        {
+            bool fileexists = File.Exists(actual_schedule_part.path_to_wallpaper);
+            image_defect = !fileexists;
+            this.filepath_here.Text = fileexists ? actual_schedule_part.path_to_wallpaper : actual_schedule_part.path_to_wallpaper.Insert(0, "(НЕ НАЙДЕН) ");
+            wallpaper.Source = ImageSource.FromFile(fileexists ? actual_schedule_part.path_to_wallpaper : TimedPictureModel.retrieve_original_path);
         }
 
         private void schedule_part_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -98,6 +112,7 @@ namespace malyar_apk
                 else  {
                     widthConstraint = parent_layout_smaller_side_cached;
                 }
+                del_button.WidthRequest = del_button.HeightRequest = 50;
                 return new SizeRequest(new Size(widthConstraint, widthConstraint * DimensionMultiplier * Constants.UiVerticalRatio));
             }
         }
@@ -203,9 +218,7 @@ namespace malyar_apk
                     }
                     else { actual_schedule_part.end_time = choose_end.Time; }                   
                 }
-                else {
-                    actual_schedule_part.start_time = choose_start.Time;
-                }
+                else { actual_schedule_part.start_time = choose_start.Time; }
 
                 SaveableChangeWasDone.Invoke(this, null);
                 TimedPicturesLoader.FitIntervalIn((sender == choose_end)? ChangeDirection.AffectDownwards : ChangeDirection.AffectUpwards, actual_schedule_part);
@@ -214,10 +227,10 @@ namespace malyar_apk
 
         private void wallpaper_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName != "Source" || this.actual_schedule_part == null)
+            if (!has_initialized || e.PropertyName != "Source" || image_defect || this.actual_schedule_part == null)
                 return;
 
-            this.actual_schedule_part.path_to_wallpaper = this.filepath_here.Text = ((sender as Image).Source as FileImageSource)?.File;          
+            this.actual_schedule_part.path_to_wallpaper = this.filepath_here.Text = ((sender as Image).Source as FileImageSource)?.File;
 
             if (SaveableChangeWasDone!=null)
                 SaveableChangeWasDone.Invoke(this, null);

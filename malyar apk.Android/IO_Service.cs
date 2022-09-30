@@ -4,27 +4,19 @@ using Android.OS;
 using Android.Runtime;
 using malyar_apk.Shared;
 using System.Collections.Generic;
+using System.IO;
 
 namespace malyar_apk.Droid
 {
     [Service(Enabled = true)]
     public class IO_Service : Service
     {
-        //private string filepath;
-        //public GetToServiceBinder Binder { get; private set; }
-
         public override IBinder OnBind(Intent intent){ return null; }
-
-        /*public override void OnCreate()
-        {
-            base.OnCreate();
-            Binder = new GetToServiceBinder(this);
-        }*/
 
         [return: GeneratedEnum]
         public override StartCommandResult OnStartCommand(Intent intent, [GeneratedEnum] StartCommandFlags flags, int startId)
         {
-            var pi = intent.GetParcelableExtra(AndroidConstants.PARAM_PINTENT) as PendingIntent;
+            var pi = intent.GetParcelableExtra(Intent.ExtraIntent) as PendingIntent;
             Intent back_to_activity = new Intent();
 
             if (intent.GetBooleanExtra(AndroidConstants.IO_SAVE_KEY, false))//если сохраняем какой-то список

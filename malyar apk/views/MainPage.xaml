@@ -85,7 +85,7 @@
             </StackLayout>
         </Frame>
 
-        <ScrollView Padding="5" Scrolled="scrollview_Scrolled" x:Name="scrollview" Orientation="Vertical" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand">
+        <ScrollView Padding="5"  x:Name="scrollview" Orientation="Vertical" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand">
             <StackLayout Padding="6" x:Name="schedule_container">
 
             </StackLayout>

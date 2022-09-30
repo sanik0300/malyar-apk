@@ -45,10 +45,12 @@ namespace malyar_apk
 
         public override void Write(Utf8JsonWriter writer, TimedPictureModel value, JsonSerializerOptions options)
         {
-
             writer.WriteStartObject();
             foreach(var propertyInf in value.GetType().GetProperties())
             {
+                if(propertyInf.GetCustomAttribute(typeof(JsonIgnoreAttribute))!=null) {
+                    continue;
+                }
                 writer.WritePropertyName(propertyInf.Name);
                 object v = propertyInf.GetValue(value);
                 writer.WriteStringValue(v is string? v as string : ((TimeSpan)v).ToString(Constants.TimeFormat));

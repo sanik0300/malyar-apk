@@ -7,29 +7,27 @@ using Android.Content;
 using Xamarin.Forms;
 using malyar_apk.Shared;
 using System.IO;
-using Android.Support.V4.Content;
 
 namespace malyar_apk.Droid
 {
-    [Activity(Name="com.sanikshomemade.malyar_apk.MainActivity", LaunchMode = LaunchMode.SingleTask, Label = "malyar_apk", Icon = "@mipmap/icon", Theme = "@style/MainTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize )]
+
+    [Activity(Name = "com.sanikshomemade.malyar_apk.MainActivity", LaunchMode = LaunchMode.SingleTask, Label = "malyar_apk", Icon = "@mipmap/icon", Theme = "@style/MainTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize)]
     public class MainActivity : global::Xamarin.Forms.Platform.Android.FormsAppCompatActivity
     {
-        static public MainActivity Current { get; private set; }
         private IdlenessEndReceiver idleness_receiver;
         public bool InForeground { get; private set; }
-
+        
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
-            Current = this;
+            ContextDependentObject.BaseContext = this;
             this.InForeground = false;
 
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
             LoadApplication(new App());
-
-            const string filename = "schedule.json";//на случай если захочу название файла менять
-            ToolForImages.path_to_schedule = Path.Combine(this.GetExternalFilesDir(null).AbsolutePath, filename);
+            
+            ContextDependentObject.path_to_schedule = IO_Implementation.ConvertFilenameToFilepath("schedule.json");
         }
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
@@ -42,7 +40,7 @@ namespace malyar_apk.Droid
         public void StartIO(string filepath, bool save, IList<TimedPictureModel> models = null)
         {
             PendingIntent pi = this.CreatePendingResult(save ? AndroidConstants.TaskCode_Save : AndroidConstants.TaskCode_Load, new Intent(), 0);
-            Intent intent = new Intent(this, typeof(IO_Service)).PutExtra(AndroidConstants.PARAM_PINTENT, pi)
+            Intent intent = new Intent(this, typeof(IO_Service)).PutExtra(Intent.ExtraIntent, pi)
                                                                 .PutExtra(AndroidConstants.IO_SAVE_KEY, save)
                                                                 .PutExtra(AndroidConstants.FILEPATH_EXTRA_KEY, filepath);
 
@@ -66,7 +64,7 @@ namespace malyar_apk.Droid
                 idleness_receiver = new IdlenessEndReceiver(intent);
                 IntentFilter filter = new IntentFilter(PowerManager.ActionDeviceIdleModeChanged);
                 filter.AddAction(Intent.ActionScreenOn);
-                filter.AddAction(AndroidConstants.START_IO_LOCAL);
+                filter.AddAction(AndroidConstants.START_IO_LOCAL_ACTION);
                 RegisterReceiver(idleness_receiver, filter);
             }       
         }
@@ -80,25 +78,29 @@ namespace malyar_apk.Droid
                 idleness_receiver = null;
             }
             
-            ToolForImages tfi = DependencyService.Get<IMagesMediator>() as ToolForImages; //so far i haven't found another way to get global instance of toolforimages
+            var iom = DependencyService.Get<IOMediator>() as IO_Implementation; //so far i haven't found another way to get global instance of UxImplementation
             switch (requestCode)
             {
                 case AndroidConstants.TaskCode_Load:
                     var parcelables = data.GetParcelableArrayExtra(AndroidConstants.RESULT_DESERIALIZED);
+                    //bool origs_present = resultCode==Result.Canceled;
                     List<TimedPictureModel> future_schedule = null;
+                    
                     if (parcelables != null)
                     {
                         future_schedule = new List<TimedPictureModel>(parcelables.Length);
                         foreach (IParcelable p in parcelables)
                         {
                             future_schedule.Add((p as TPModelParcelable).source);
+                            //if (origs_present) { continue; }
+                            //origs_present = tpm.path_to_wallpaper == Constants.just_original_keyword;
                         }
                     }
        
-                    tfi.OnScheduleAdded(future_schedule);
+                    iom.OnScheduleAdded(future_schedule);
                     break;
                 case AndroidConstants.TaskCode_Save:
-                    tfi.OnScheduleSaved();
+                    iom.OnScheduleSaved();
                     break;
             }
         }
@@ -115,7 +117,7 @@ namespace malyar_apk.Droid
             InForeground = true;
             if (idleness_receiver == null)
                 return;
-            this.SendBroadcast(new Intent(AndroidConstants.START_IO_LOCAL));
+            this.SendBroadcast(new Intent(AndroidConstants.START_IO_LOCAL_ACTION));
         }
 
         protected override void OnStop()

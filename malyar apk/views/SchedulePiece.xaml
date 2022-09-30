@@ -32,7 +32,7 @@
             </local:PhoneFrame>
 
             <ImageButton Source="images/delete.png" Aspect="AspectFit" Grid.Column="1" Grid.Row="1" HorizontalOptions="End" x:Name="del_button" BackgroundColor="LightSalmon" VerticalOptions="Center"
-                   MinimumHeightRequest="50" MinimumWidthRequest="80" Clicked="del_button_Clicked">
+                   MinimumHeightRequest="50" MinimumWidthRequest="50" Clicked="del_button_Clicked">
             </ImageButton>
 
             <StackLayout x:Name="to_store_del_swiftly" Grid.Column="1" Grid.Row="2" Orientation="Horizontal" BackgroundColor="LightSteelBlue">

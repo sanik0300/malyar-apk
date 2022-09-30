@@ -13,22 +13,26 @@ namespace malyar_apk
     {
         private double width = 0, height = 0;    
         bool horizontal;
-        private bool user_went_to_other_page = false, has_initialized = false;
+        private bool user_went_to_other_page = false;
+
+        private IOMediator memdiator;
         public MainPage()
         {          
             InitializeComponent();
             TimedPicturesLoader.IntervalDeleted += Interval_WasDeleted;
             TimedPicturesLoader.IntervalInserted += Interval_WasInserted;
             jsonIOmanager.ProgressChanged += Serialization_ProgressChanged;
-            DependencyService.Get<IMagesMediator>().ScheduleLoaded += ScheduleLoaded;
+            memdiator = DependencyService.Get<IOMediator>();
+            memdiator.ScheduleLoaded += ScheduleLoaded;
         }
 
         private void ScheduleLoaded(object sender, ScheduleAddedEventArgs args)
         {
+            var IUM = DependencyService.Get<IUXMediator>();
             if (args.TPMs == null)
             {
-                TimedPicturesLoader.FitIntervalIn(ChangeDirection.InsertNew, TimedPictureModel.OriginalForTheWholeDay());//original wallpaper during the whole day
-                (sender as IMagesMediator).OuchError("Не удалось расшифровать расписание обоев", schedule_container.Children[0]);
+                TimedPicturesLoader.FitIntervalIn(ChangeDirection.InsertNew, TimedPictureModel.OriginalForTheWholeDay());
+                IUM.OuchError("Не удалось расшифровать расписание обоев", schedule_container.Children[0]);
                 return;
             }
             for(int i = 0; i<args.TPMs.Count; ++i)
@@ -38,9 +42,10 @@ namespace malyar_apk
                 SP.SaveableChangeWasDone += OnSaveableChangeWasDone;
                 schedule_container.Children.Add(SP);
             }
-            (sender as IMagesMediator).DeliverToast("Загружено успешно");
+            IUM.DeliverToast("Загружено успешно");
+            if (schedule_container.Children.Count == 0)
+                return;
             (schedule_container.Children[0] as SchedulePiece).ProtectFromClickingDel(schedule_container.Children.Count > 1);
-            has_initialized = true;
         }
 
         private void OnSaveableChangeWasDone(object sender, EventArgs e) { save.IsEnabled = true; }
@@ -135,8 +140,7 @@ namespace malyar_apk
                 user_went_to_other_page = false;
                 return;
             }
-            
-            if (has_initialized) {return;}               
+            if (memdiator.WasInitialized) {return;}               
 
             if (TimedPicturesLoader.CheckOutExistingOnes())
                 return;
@@ -162,7 +166,7 @@ namespace malyar_apk
 
         private void scrollview_Scrolled(object sender, ScrolledEventArgs e)
         {
-           // if(schedule_container.Children.Count == 0) { return;  }
+            if(schedule_container.Children.Count == 0) { return;  }
             if (horizontal) {
                 scroll_up.IsEnabled = scrollview.ScrollX > schedule_container.Children[0].Width / 2;
                 scroll_down.IsEnabled = (scrollview.Width - scrollview.ScrollX) > schedule_container.Children.Last().Width / 2;

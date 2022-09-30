@@ -5,6 +5,8 @@ using System.Text.Json;
 using Xamarin.Forms;
 using Xamarin.Essentials;
 using Xamarin.Forms.Internals;
+using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace malyar_apk.Shared
 {
@@ -22,6 +24,20 @@ namespace malyar_apk.Shared
         {
             ++processed_so_far;
             ProgressChanged.Invoke(this, new ValueChangedEventArgs(default, processed_so_far / MaxOfProgress));
+        }
+
+        public static uint CountLinesOfTypeSerialization(Type type)
+        {
+            uint output = 2; //lines with StartObject and EndObject semicolons
+            PropertyInfo[] properties = type.GetProperties();
+            for(int i = 0; i<properties.Length; ++i)
+            {
+                if (properties[i].GetCustomAttribute(typeof(JsonIgnoreAttribute)) != null){
+                    continue;
+                }
+                output++;
+            }
+            return output;
         }
 
         public List<TimedPictureModel> GetScheduleFromFile(string where_from)
@@ -42,14 +58,19 @@ namespace malyar_apk.Shared
                         }
                     }   
                 } 
+                //Sharing the EndTime_s between the deserialized models
+                for(int i = 0; i<result.Count-1; ++i)
+                {
+                    result[i].end_time = TimeSpan.FromMinutes(result[i+1].start_time.TotalMinutes);
+                }
+                result[result.Count - 1].end_time = TimeSpan.FromDays(1);
             }
             catch(Exception e) {
                 Log.Warning("exception", $"{e.GetType().Name}: {e.Message}");
             }
             finally
             {
-                ProgressChanged.Invoke(this, new ValueChangedEventArgs(MaxOfProgress, 0));
-                
+                ProgressChanged.Invoke(this, new ValueChangedEventArgs(MaxOfProgress, 0));     
             }
             return result;
         }

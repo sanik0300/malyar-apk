@@ -8,6 +8,11 @@ using Xamarin.Essentials;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
+namespace malyar_apk.Shared
+{
+    public enum NoSuchImgHandling : byte { IgnoreAndWaitNext, PutNext, PutDefault }
+}
+
 namespace malyar_apk
 {
     [XamlCompilation(XamlCompilationOptions.Compile)]
@@ -22,7 +27,7 @@ namespace malyar_apk
         {
             base.OnAppearing();
             autosave_switch.On = Preferences.Get(Constants.AUTOSAVE_SETTING, true);
-            picker_cell.InitFromSettings(Constants.MISSING_IMG_HANDLE_SETTING);
+            picker_cell.InitFromSettings(Constants.MISSING_IMG_HANDLING);
         }
 
         private void autosave_switch_OnChanged(object sender, ToggledEventArgs e)
@@ -30,22 +35,14 @@ namespace malyar_apk
             Preferences.Set(Constants.AUTOSAVE_SETTING, (sender as SwitchCell).On);
         }
 
-        /*private void PickerCell_SelectedIndexChanged(object sender, ValueChangedEventArgs e)
-        {
-            byte max = (byte)((sender as PickerCell).Items.Count - 1);
-            if(e.OldValue < max && e.NewValue == max)
-            {
-                //показать imagecell
-            }
-            else if(e.OldValue == max && e.NewValue < max)
-            {
-                //спрятать imagecell
-            }            
-        }*/
-
         private void picker_cell_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Preferences.Set(Constants.MISSING_IMG_HANDLE_SETTING, (sender as PickerCell).SelectedIndex);
+            Preferences.Set(Constants.MISSING_IMG_HANDLING, (sender as PickerCell).SelectedIndex);
+        }
+
+        private void stop_changing_Clicked(object sender, EventArgs e)
+        {
+            DependencyService.Get<ISchedulingMediator>().CleanChangesSchedule(TimedPicturesLoader.prev_schedule_count);
         }
     }
 }

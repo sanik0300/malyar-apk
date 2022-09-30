@@ -2,17 +2,22 @@
 using System.Collections.Generic;
 using System.IO;
 using malyar_apk.Shared;
+using Xamarin.Essentials;
 using Xamarin.Forms;
 
 namespace malyar_apk
 {
     static class TimedPicturesLoader
     {
-        private static List<TimedPictureModel> _schedule;
+        private static List<TimedPictureModel> _schedule = new List<TimedPictureModel>(24 / (Constants.MinutesPerWallpaperByDefault / 60));
+        internal static int prev_schedule_count { get; private set; }
 
         static TimedPicturesLoader()
         {
-            DependencyService.Get<IMagesMediator>().ScheduleSaved += (sender, args) => { (sender as IMagesMediator).DenoteSuccesfulSave(GeneratePercentageMap()); };
+            DependencyService.Get<IOMediator>().ScheduleSaved += (sender, args) => 
+            {
+                DependencyService.Get<IUXMediator>().DenoteSuccesfulSave(GeneratePercentageMap()); 
+            };
         }
         static public float[] GeneratePercentageMap()
         {
@@ -25,24 +30,33 @@ namespace malyar_apk
         }
         static internal bool CheckOutExistingOnes()
         {
-            IMagesMediator mediator = DependencyService.Get<IMagesMediator>();
+            IOMediator IOM = DependencyService.Get<IOMediator>();
+            IOM.WasInitialized = true;
 
-            if (File.Exists(mediator.GetPathToSchedule()))
+            if (File.Exists(IOM.PathToSchedule))
             {
-                mediator.ScheduleLoaded += (s, args) => {
-                    _schedule = args.TPMs != null ? args.TPMs : new List<TimedPictureModel>(24 / (Constants.MinutesPerWallpaperByDefault/60)); };
-                mediator.BeginLoadingSchedule();
+                IOM.ScheduleLoaded += (s, args) => {
+                    _schedule = args.TPMs != null ? args.TPMs : new List<TimedPictureModel>(24 / (Constants.MinutesPerWallpaperByDefault / 60)); };
+                IOM.BeginLoadingSchedule();
                 return true;
             }
-          
-            _schedule = new List<TimedPictureModel>(24 / (Constants.MinutesPerWallpaperByDefault/60));   
+
             return false;
         }
 
         static internal void TryToSaveExistingOnes()
         {
-            IMagesMediator mediator = DependencyService.Get<IMagesMediator>();
-            mediator.SaveSchedule(_schedule);
+            prev_schedule_count = _schedule.Count;
+            DependencyService.Get<IOMediator>().SaveSchedule(_schedule);
+            
+            ISchedulingMediator ISM = DependencyService.Get<ISchedulingMediator>();
+            ISM.CleanChangesSchedule(prev_schedule_count);
+
+            if (_schedule.Count == 1)
+            {
+                ISM.SetWallpaperConstant(_schedule[0]);
+            }
+            else { ISM.AssignActionsOfChange(_schedule); }   
         }
 
         public static event EventHandler<TPModelAddedEventArgs> IntervalInserted;
@@ -50,14 +64,11 @@ namespace malyar_apk
 
         private static double get_position_in_schedule_with_bin_search(TimedPictureModel TPM, IComparer<TimedPictureModel> comparer, int start = -1, int end = -1)
         {
-            if (_schedule.Count == 0) {
-                return 0;
-            }
+            if (_schedule.Count == 0) { return 0; }
 
             int left_end = start < 0? 0 : start, 
                 right_end = end < 0? _schedule.Count - 1 : end, 
                 mid;
-
             do
             {
                 switch (comparer.Compare(TPM, _schedule[left_end]))
@@ -245,8 +256,6 @@ namespace malyar_apk
 
             IntervalDeleted.Invoke(null, new TPModelDeletedEventArgs(my_old_indx));
         }
-
-        //private static void MergeIntervals(int first_TPM_indx) { }
     }
 
     /// <summary>

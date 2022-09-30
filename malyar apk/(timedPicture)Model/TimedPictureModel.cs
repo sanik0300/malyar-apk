@@ -2,14 +2,16 @@
 using System.ComponentModel;
 using System.Text.Json.Serialization;
 using malyar_apk;
+using Xamarin.Forms;
 
 namespace malyar_apk.Shared { 
 
     [JsonConverter(typeof(ResponsiveTPMConverter))]
     public class TimedPictureModel : IComparable, ICloneable, INotifyPropertyChanged
     {
-        internal const string just_original = "RETRIEVE_ORIGINAL";
+        [JsonPropertyOrder(0)]
         public string path_to_wallpaper { get; internal set; }
+        internal static readonly string retrieve_original_path = DependencyService.Get<IOMediator>().PathToOriginalWP;
 
         internal TimeSpan start_time, end_time;
         public TimeSpan StartTime { 
@@ -21,11 +23,12 @@ namespace malyar_apk.Shared {
                 PropertyChanged.Invoke(this, new PropertyChangedEventArgs(nameof(start_time)));
             }
         }
+
+        [JsonIgnore]//а зачем записывать такие очевидные вещи, если обои друг друга сменяют
         public TimeSpan EndTime
         {
             get { return end_time; }
-            set
-            {
+            set {
                 end_time = value;
                 if (PropertyChanged == null)
                     return;
@@ -50,12 +53,12 @@ namespace malyar_apk.Shared {
             return new TimeSpan(tsp.Hours, tsp.Minutes, 0);
         }
         
-        internal TimedPictureModel() {  }
+        internal TimedPictureModel() { /*path_to_wallpaper = retrieve_original_path;*/ }
 
        internal static TimedPictureModel OriginalForTheWholeDay()
-        {
-            return new TimedPictureModel(just_original, TimeSpan.Zero, TimeSpan.FromDays(1));
-        }
+       {
+            return new TimedPictureModel(retrieve_original_path, TimeSpan.Zero, TimeSpan.FromDays(1));
+       }
 
         public TimedPictureModel(string path_to_img, TimeSpan start, TimeSpan end)
         {
