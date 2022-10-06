@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="malyar_apk.SettingsPage"
+             xmlns:local="clr-namespace:malyar_apk" Title="Настройки">
+    <ContentPage.Content>
+        <StackLayout Orientation="Vertical" VerticalOptions="FillAndExpand">
+            <TableView>
+                <TableRoot>
+                    <TableSection>
+                        <SwitchCell x:Name="autosave_switch" Text="Автосохранение" On="True" OnChanged="autosave_switch_OnChanged" OnColor="Violet"></SwitchCell>
+                        <local:PickerCell x:Name="picker_cell" Title="Если файл обоев не найден" SelectedIndexChanged="picker_cell_SelectedIndexChanged">
+                            <local:PickerCell.Items>
+                                <x:String>Ничего не делать</x:String>
+                                <x:String>Поставить следующие</x:String>
+                                <x:String>Поставить системные</x:String>
+                            </local:PickerCell.Items>
+                        </local:PickerCell>
+                        <!--ImageCell x:Name="auxillary_wallpaper"></ImageCell-->
+                    </TableSection>
+                </TableRoot>
+            </TableView>
+            <Button VerticalOptions="End" HorizontalOptions="Center" Text="Сбросить смену обоев" x:Name="stop_changing" Clicked="stop_changing_Clicked" Margin="50"></Button>
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>

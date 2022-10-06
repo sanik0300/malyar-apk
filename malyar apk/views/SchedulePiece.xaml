@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentView xmlns="http://xamarin.com/schemas/2014/forms" 
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="malyar_apk.SchedulePiece"
+             xmlns:local="clr-namespace:malyar_apk"
+             Background="SteelBlue" MinimumHeightRequest="100">
+
+    <ContentView.Content>
+        <Grid Padding="5" x:Name="grid">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.5*"></ColumnDefinition>
+                <ColumnDefinition Width="2*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="15"></RowDefinition>
+                <RowDefinition Height="3*"></RowDefinition>
+                <RowDefinition Height="12*"></RowDefinition>
+            </Grid.RowDefinitions>
+
+            <ScrollView x:Name="filepath_place" Orientation="Horizontal" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2">
+                <Label x:Name="filepath_here" Background="LightBlue" TextColor="Black"></Label>
+            </ScrollView>
+
+            <!--yeeee make it really look like a phone :DD-->
+            <local:PhoneFrame x:Name="akaphone" Background="DarkGray" BorderColor="Black" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" VerticalOptions="Center" HorizontalOptions="Center">
+                <Image x:Name="wallpaper" PropertyChanged="wallpaper_PropertyChanged" Aspect="AspectFill">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer x:Name="img_almost" NumberOfTapsRequired="1" Tapped="img_almost_Tapped"></TapGestureRecognizer>
+                        <TapGestureRecognizer x:Name="source_img_really" NumberOfTapsRequired="2" Tapped="source_img_really_Tapped"></TapGestureRecognizer>
+                    </Image.GestureRecognizers>
+                </Image>
+            </local:PhoneFrame>
+
+            <ImageButton Source="images/delete.png" Aspect="AspectFit" Grid.Column="1" Grid.Row="1" HorizontalOptions="End" x:Name="del_button" BackgroundColor="LightSalmon" VerticalOptions="Center"
+                   MinimumHeightRequest="50" MinimumWidthRequest="50" Clicked="del_button_Clicked">
+            </ImageButton>
+
+            <StackLayout x:Name="to_store_del_swiftly" Grid.Column="1" Grid.Row="2" Orientation="Horizontal" BackgroundColor="LightSteelBlue">
+                <StackLayout x:Name="timespan_panel"  HorizontalOptions="CenterAndExpand" VerticalOptions="Center" Padding="-2">
+                    <TimePicker x:Name="choose_start" PropertyChanged="TimePicker_PropertyChanged" IsEnabled="False"></TimePicker>
+                    <TimePicker x:Name="choose_end" PropertyChanged="TimePicker_PropertyChanged" IsEnabled="False"></TimePicker>
+                </StackLayout>
+            </StackLayout>
+        </Grid>
+    </ContentView.Content>
+   
+</ContentView>
