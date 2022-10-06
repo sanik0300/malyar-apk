@@ -12,6 +12,7 @@ using malyar_apk.Shared;
 using Android.Content.PM;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 [assembly: Dependency(typeof(malyar_apk.Droid.UxImplementation))]
 namespace malyar_apk.Droid
@@ -70,10 +71,10 @@ namespace malyar_apk.Droid
             builder = builder.SetContent(remote_view).SetSmallIcon(Resource.Drawable.save_small_icon);
 
             manager.Notify(1, builder.Build());
-            #if !DEBUG
+            
                 await Task.Delay(2000);
                 manager.Cancel(1);
-            #endif
+            
             builder.Dispose();
             manager.Dispose();
         }

@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:controls="clr-namespace:Xamarin.Forms.Controls;assembly=CircularProgressBar"
              xmlns:local="clr-namespace:malyar_apk"
              x:Class="malyar_apk.MainPage"
              NavigationPage.HasNavigationBar="False">
@@ -58,7 +57,7 @@
             <ImageButton IsEnabled="False" x:Name="scroll_up" Clicked="scroll_up_Clicked" Style="{StaticResource almost_square}" Source="images/scroll.png"></ImageButton>
             <ImageButton x:Name="scroll_down" Clicked="scroll_down_Clicked" Style="{StaticResource almost_square}" Source="images/scroll.png" Rotation="180"></ImageButton>
 
-            <controls:CircularProgressBar x:Name="loading" Easing="True" Color="LightGreen" VerticalOptions="CenterAndExpand" HorizontalOptions="Fill" HeightRequest="{Binding Source={RelativeSource Mode=Self}, Path=Width}"></controls:CircularProgressBar>
+            
             <ProgressBar x:Name="snek" HorizontalOptions="FillAndExpand" VerticalOptions="Center" Background="#d8ffcc" ProgressColor="LightGreen"></ProgressBar>
 
             <ImageButton x:Name="save" Style="{StaticResource sometimes_disabled_w_icon}" IsEnabled="False" Clicked="save_Clicked"></ImageButton>

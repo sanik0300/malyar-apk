@@ -16,7 +16,7 @@ namespace malyar_apk
             InitializeComponent();
 
             if(Device.RuntimePlatform == Device.Android) {
-                MainPage = new NavigationPage(new MainPage()) { BarBackgroundColor = Color.BlueViolet };
+                MainPage = new OurResponsiveNavigationpage(new MainPage()) { BarBackgroundColor = Color.BlueViolet };
             }
             else { new MainPage(); }
         }
@@ -45,7 +45,13 @@ namespace malyar_apk
                         io_thing.RememberOriginalWP();
                     }
                     MessagingCenter.Send(io_thing, Constants.UpdateImg);
+                    SchedulePiece.worth_asking_for_file = true;
                 }
+            }
+            
+            if(await Permissions.CheckStatusAsync<Permissions.StorageWrite>() != PermissionStatus.Granted)
+            {
+                await Permissions.RequestAsync<Permissions.StorageWrite>();
             }
             Preferences.Set(Constants.FIRST_LAUNCH_KEY, false);
         }

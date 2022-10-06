@@ -64,6 +64,7 @@ namespace malyar_apk
             }
            has_initialized = true;
         }
+
         private void OnMessageReceived(IOMediator sender)
         {
             UpdateImgRepresentation();
@@ -227,7 +228,10 @@ namespace malyar_apk
 
         private void wallpaper_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (!has_initialized || e.PropertyName != "Source" || image_defect || this.actual_schedule_part == null)
+            if (e.PropertyName != "Source" || this.actual_schedule_part == null)
+                return;
+
+            if ((this.Width <= 0 || this.Height <=0) && image_defect)
                 return;
 
             this.actual_schedule_part.path_to_wallpaper = this.filepath_here.Text = ((sender as Image).Source as FileImageSource)?.File;

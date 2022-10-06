@@ -7,6 +7,7 @@ using Xamarin.Essentials;
 using Xamarin.Forms.Internals;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using System.ComponentModel;
 
 namespace malyar_apk.Shared
 {
@@ -14,7 +15,9 @@ namespace malyar_apk.Shared
     {
         public static event EventHandler<ValueChangedEventArgs> ProgressChanged;
         public static jsonIOmanager CurrentInstance { get; private set; }
-        
+
+        public static event EventHandler ExceptionOccured;
+
         private float MaxOfProgress, processed_so_far;
         public jsonIOmanager() {
             CurrentInstance = this;
@@ -65,11 +68,12 @@ namespace malyar_apk.Shared
                 }
                 result[result.Count - 1].end_time = TimeSpan.FromDays(1);
             }
-            catch(Exception e) {
-                Log.Warning("exception", $"{e.GetType().Name}: {e.Message}");
-            }
-            finally
+            catch(Exception e) { ExceptionKurwa(e); }
+            finally 
             {
+                #if DEBUG
+                    ExceptionOccured.Invoke(new string[] { "test_exception", "aaaaaaaaa", "3des net stacktracea" }, EventArgs.Empty);
+                #endif                  
                 ProgressChanged.Invoke(this, new ValueChangedEventArgs(MaxOfProgress, 0));     
             }
             return result;
@@ -78,8 +82,7 @@ namespace malyar_apk.Shared
         public bool SaveScheduleToFile(IList<TimedPictureModel> what, string where_to)
         {
             MaxOfProgress = (uint)what.Count;
-            try
-            {
+            try {
                 using (var Fs = new FileStream(where_to, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
                 {
                     Fs.SetLength(0);
@@ -97,14 +100,27 @@ namespace malyar_apk.Shared
                 Preferences.Set(Constants.SAVED_WALLPAPERS_COUNT_KEY, what.Count);
                 return true;
             }
-            catch(Exception e) {
-                Log.Warning("exception", $"{e.GetType().Name}: {e.Message}");
+            catch(Exception e) 
+            {
+                ExceptionKurwa(e);
                 return false; 
             }
-            finally
-            {
+            finally {
                 ProgressChanged.Invoke(this, new ValueChangedEventArgs(MaxOfProgress, 0));
             }
+        }
+
+        private void ExceptionKurwa(Exception e)
+        {
+            #if DEBUG
+                Log.Warning("exception", $"{e.GetType().Name}: {e.Message}");
+            #endif
+
+            #if !DEBUG
+                Vibration.Vibrate(500);
+                
+                ExceptionOccured.Invoke(new string[3] { e.GetType().Name, e.Message, e.StackTrace }, EventArgs.Empty);
+            #endif 
         }
     }
 }

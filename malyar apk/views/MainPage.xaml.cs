@@ -35,14 +35,16 @@ namespace malyar_apk
                 IUM.OuchError("Не удалось расшифровать расписание обоев", schedule_container.Children[0]);
                 return;
             }
-            for(int i = 0; i<args.TPMs.Count; ++i)
+
+            for (int i = 0; i < args.TPMs.Count; ++i)
             {
                 var SP = new SchedulePiece(args.TPMs[i]);
-                
+
                 SP.SaveableChangeWasDone += OnSaveableChangeWasDone;
                 schedule_container.Children.Add(SP);
             }
             IUM.DeliverToast("Загружено успешно");
+
             if (schedule_container.Children.Count == 0)
                 return;
             (schedule_container.Children[0] as SchedulePiece).ProtectFromClickingDel(schedule_container.Children.Count > 1);
@@ -52,10 +54,9 @@ namespace malyar_apk
 
         private void Serialization_ProgressChanged(object sender, ValueChangedEventArgs e)
         {
-            if(horizontal)
-                loading.Progress = e.NewValue*100;
-            else
+            if(!horizontal) {
                 snek.Progress = e.NewValue;
+            }     
         }
 
         private async void Interval_WasInserted(object sender, TPModelAddedEventArgs args)
@@ -252,7 +253,7 @@ namespace malyar_apk
             add_another.Orientation = horizontal ? StackOrientation.Vertical : StackOrientation.Horizontal;//панель где кнопка добавления
             schedule_container.Orientation = horizontal ? StackOrientation.Horizontal : StackOrientation.Vertical;//панель которая содержит сами обои
             snek.IsVisible = !horizontal;
-            loading.IsVisible = horizontal;
+            //loading.IsVisible = horizontal;
 
             scroll_up.Rotation = horizontal ? -90 : 0;
             scroll_down.Rotation = horizontal ? 90 : 180;
