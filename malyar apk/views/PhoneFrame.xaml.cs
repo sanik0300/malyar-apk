@@ -20,12 +20,11 @@ namespace malyar_apk
 
         protected override SizeRequest OnMeasure(double widthConstraint, double heightConstraint)
         {
-            if (widthConstraint/heightConstraint > ratio)
+            if (widthConstraint/heightConstraint >= ratio)
             {
                 widthConstraint = heightConstraint * ratio;
             }
-            else if(widthConstraint/heightConstraint < ratio)
-            {
+            else {
                 heightConstraint = widthConstraint / ratio;
             }
 

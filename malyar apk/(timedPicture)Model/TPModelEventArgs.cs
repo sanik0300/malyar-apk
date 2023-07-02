@@ -7,9 +7,11 @@ namespace malyar_apk
     public class TPModelDeletedEventArgs : EventArgs
     {
         public readonly int OldIndex;
-        public TPModelDeletedEventArgs(int indx)
+        public readonly byte Range;
+        public TPModelDeletedEventArgs(int indx, byte rng=1)
         {
             OldIndex = indx;
+            Range = rng;
         }
     }
 

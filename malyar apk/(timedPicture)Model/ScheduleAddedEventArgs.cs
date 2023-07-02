@@ -5,12 +5,11 @@ namespace malyar_apk.Shared
 {
     public class ScheduleAddedEventArgs
     {
-        public readonly List<TimedPictureModel> TPMs;
-        //public readonly bool originals_present;
+        public readonly List<TimedPictureModel> TPMs;    
 
-        public ScheduleAddedEventArgs(List<TimedPictureModel> list/*, bool origs*/)
+        public ScheduleAddedEventArgs(List<TimedPictureModel> list)
         {
-            TPMs = list; //originals_present = origs;
+            TPMs = list;
         }
     }
 }

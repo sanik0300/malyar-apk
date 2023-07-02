@@ -230,32 +230,45 @@ namespace malyar_apk
             }
         }
 
+        private static void InnerDeleteWithoutEvents(int indx)
+        {
+            if (indx == 0)
+            {
+                _schedule[1].StartTime = TimeSpan.Zero;
+            }
+            else if (indx == _schedule.Count - 1)
+            {
+                _schedule[indx - 1].EndTime = TimeSpan.FromDays(1);
+            }
+            else
+            {
+                if (_schedule[indx - 1].DurationInMinutes > _schedule[indx + 1].DurationInMinutes)
+                {
+                    _schedule[indx - 1].Join(_schedule[indx + 1], ChangeDirection.AffectDownwards);
+                }
+                else
+                {
+                    _schedule[indx + 1].Join(_schedule[indx - 1], ChangeDirection.AffectUpwards);
+                }
+            }
+            _schedule.RemoveAt(indx);//i'm not complicating, this way is faster
+        }
+
         public static void DeleteInterval(TimedPictureModel interval)
         {
             int my_old_indx = (int)get_position_in_schedule_with_bin_search(interval, new CompareByStartTime());
             //let's get to know which neighbouring interval lasts longer before deleting the current one
 
-            if (my_old_indx == 0)
-            {
-                _schedule[1].StartTime = TimeSpan.Zero;
-            }            
-            else if (my_old_indx == _schedule.Count - 1)
-            {
-                _schedule[my_old_indx - 1].EndTime = TimeSpan.FromDays(1);
-            }
-            else {
-                if (_schedule[my_old_indx - 1].DurationInMinutes > _schedule[my_old_indx + 1].DurationInMinutes)
-                {  
-                     _schedule[my_old_indx - 1].Join(_schedule[my_old_indx + 1], ChangeDirection.AffectDownwards);   
-                }
-                else {
-                    _schedule[my_old_indx + 1].Join(_schedule[my_old_indx - 1], ChangeDirection.AffectUpwards);
-                }
-            }
- 
-            _schedule.RemoveAt(my_old_indx);//i'm not complicating, this way is faster
+            InnerDeleteWithoutEvents(my_old_indx);
 
-            IntervalDeleted.Invoke(null, new TPModelDeletedEventArgs(my_old_indx));
+            if (_schedule.Count == 1 || my_old_indx == 0 || my_old_indx==_schedule.Count || _schedule[my_old_indx].path_to_wallpaper != _schedule[my_old_indx - 1].path_to_wallpaper)
+            {
+                IntervalDeleted.Invoke(null, new TPModelDeletedEventArgs(my_old_indx));
+                return;
+            }
+
+            InnerDeleteWithoutEvents(my_old_indx);
+            IntervalDeleted.Invoke(null, new TPModelDeletedEventArgs(my_old_indx, 2));
         }
     }
 

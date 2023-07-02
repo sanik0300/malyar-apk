@@ -26,7 +26,7 @@ namespace malyar_apk.Droid
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
             LoadApplication(new App());
-            
+   
             ContextDependentObject.path_to_schedule = IO_Implementation.ConvertFilenameToFilepath("schedule.json");
         }
 
