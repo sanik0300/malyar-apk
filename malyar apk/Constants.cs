@@ -7,8 +7,8 @@ namespace malyar_apk.Shared
     public sealed class Constants
     {
         public const int MinutesPerWallpaperByDefault = 240;
-        internal const string UpdateImg = "update_img";
-        //public const string just_original_keyword = "RETRIEVE_ORIGINAL";
+        internal const string UpdateImg = "update_img",
+                              FileNotFoundResourcePath = "malyar_apk.images.file_not_found.png";
 
         public const string TimeFormat = @"hh\:mm";
         public const string DONT_ASK_AGAIN_KEY = "no_ask_more",

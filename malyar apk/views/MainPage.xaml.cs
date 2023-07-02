@@ -127,8 +127,11 @@ namespace malyar_apk
         }
 
         private void Interval_WasDeleted(object sender, TPModelDeletedEventArgs args)
-        {          
-            schedule_container.Children.RemoveAt(args.OldIndex);
+        {
+            for (byte i = 0; i < args.Range; ++i)
+            {
+                schedule_container.Children.RemoveAt(args.OldIndex);
+            }          
             (schedule_container.Children[0] as SchedulePiece).ProtectFromClickingDel(schedule_container.Children.Count > 1);
             OnSaveableChangeWasDone(this, EventArgs.Empty);
         }

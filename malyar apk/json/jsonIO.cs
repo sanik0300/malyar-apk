@@ -68,7 +68,7 @@ namespace malyar_apk.Shared
                 }
                 result[result.Count - 1].end_time = TimeSpan.FromDays(1);
             }
-            catch(Exception e) { ExceptionKurwa(e); }
+            catch(Exception e) { ReactToException(e); }
             finally 
             {
                 #if DEBUG
@@ -102,7 +102,7 @@ namespace malyar_apk.Shared
             }
             catch(Exception e) 
             {
-                ExceptionKurwa(e);
+                ReactToException(e);
                 return false; 
             }
             finally {
@@ -110,7 +110,7 @@ namespace malyar_apk.Shared
             }
         }
 
-        private void ExceptionKurwa(Exception e)
+        private void ReactToException(Exception e)
         {
             #if DEBUG
                 Log.Warning("exception", $"{e.GetType().Name}: {e.Message}");

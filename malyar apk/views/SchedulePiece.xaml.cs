@@ -11,16 +11,9 @@ namespace malyar_apk
 {
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class SchedulePiece : ContentView
-    {
-        /// <summary>
-        /// Количество минут на таймере при котором кнопка делете переходит вплотную к таймеру (в вертикальной ориентации)
-        /// </summary>
-        private static int HRZ_Switch_Minutes = Constants.MinutesPerWallpaperByDefault / 2;
-        /// <summary>
-        /// Количество минут на таймере, при котором панель с таймером и кнопкой делете растягивается на 2 строки сетки
-        /// </summary>
-        private static int ROWSP_Switch_Minutes = Constants.MinutesPerWallpaperByDefault / 4;  
-        private static int MinMinutesToShowHRZ= 90, MinMinutesToShowVERT = 60;
+    {  
+        private const int MaxIntervalWhenShrink = Constants.MinutesPerWallpaperByDefault / 2,
+                           MaxIntervalWhenChangeGrid = Constants.MinutesPerWallpaperByDefault/4*3;
 
         private static IUXMediator mediator = DependencyService.Get<IUXMediator>();
         
@@ -29,10 +22,10 @@ namespace malyar_apk
         private bool has_initialized = false,
                      property_changing_from_inside = false,
                      image_defect = false;
-        private byte shrink_rate = 0;
 
         public event EventHandler SaveableChangeWasDone;
 
+        private static int MinMinutesToShowHRZ = 120, MinMinutesToShowVERT = 105;
         public double DimensionMultiplier { 
             get {
                 if (actual_schedule_part == null) { return 1; }          
@@ -75,7 +68,7 @@ namespace malyar_apk
             bool fileexists = File.Exists(actual_schedule_part.path_to_wallpaper);
             image_defect = !fileexists;
             this.filepath_here.Text = fileexists ? actual_schedule_part.path_to_wallpaper : actual_schedule_part.path_to_wallpaper.Insert(0, "(НЕ НАЙДЕН) ");
-            wallpaper.Source = ImageSource.FromFile(fileexists ? actual_schedule_part.path_to_wallpaper : TimedPictureModel.retrieve_original_path);
+            wallpaper.Source = fileexists ? ImageSource.FromFile(actual_schedule_part.path_to_wallpaper) : ImageSource.FromResource(Constants.FileNotFoundResourcePath);
         }
 
         private void schedule_part_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -93,28 +86,40 @@ namespace malyar_apk
             property_changing_from_inside = false;
         }
 
-       static private double parent_layout_smaller_side_cached = 0;
+        static private double parent_bigger_side_cached, parent_smaller_side_cached;
         protected override SizeRequest OnMeasure(double widthConstraint, double heightConstraint)
-        {
-            if(DeviceDisplay.MainDisplayInfo.Width > DeviceDisplay.MainDisplayInfo.Height)
-            {
-                if (parent_layout_smaller_side_cached == 0) {
-                    parent_layout_smaller_side_cached = heightConstraint;       
+        {                
+            if(DeviceDisplay.MainDisplayInfo.Width > DeviceDisplay.MainDisplayInfo.Height) 
+            {   //Case Horizontal: WConstraint ecть, HConstraint бесконечность
+                if (widthConstraint == double.PositiveInfinity)
+                {
+                    widthConstraint = parent_bigger_side_cached;
                 }
-                else {
-                    heightConstraint = parent_layout_smaller_side_cached;
+                else if(parent_bigger_side_cached==0) {
+                    parent_bigger_side_cached = widthConstraint;
                 }
+                
+                heightConstraint = widthConstraint * (DeviceDisplay.MainDisplayInfo.Height / DeviceDisplay.MainDisplayInfo.Width);
+                if(parent_smaller_side_cached<=0)
+                {
+                    parent_smaller_side_cached = heightConstraint;
+                }
+
                 return new SizeRequest(new Size(heightConstraint * DimensionMultiplier * Constants.UiHorizontalRatio, heightConstraint));
             }
-            else {
-                if (parent_layout_smaller_side_cached == 0)  {
-                    parent_layout_smaller_side_cached = widthConstraint;
+            else { //Case Vertical: WConstraint ecть, HConstraint бесконечность 
+                
+                if (widthConstraint == double.PositiveInfinity)
+                {
+                    widthConstraint = parent_smaller_side_cached;
                 }
-                else  {
-                    widthConstraint = parent_layout_smaller_side_cached;
+                else if(parent_smaller_side_cached==0) {
+                    parent_smaller_side_cached = widthConstraint;
                 }
-                del_button.WidthRequest = del_button.HeightRequest = 50;
-                return new SizeRequest(new Size(widthConstraint, widthConstraint * DimensionMultiplier * Constants.UiVerticalRatio));
+
+                heightConstraint = widthConstraint * DimensionMultiplier * Constants.UiVerticalRatio;
+
+                return new SizeRequest(new Size(widthConstraint, heightConstraint));
             }
         }
 
@@ -125,105 +130,76 @@ namespace malyar_apk
             bool horizontal = DeviceDisplay.MainDisplayInfo.Width > DeviceDisplay.MainDisplayInfo.Height;
 
             base.OnSizeAllocated(width, height);
-
             this.width = width;
             this.height = height;
 
             double padding_coef = Math.Max(2, 10 * DimensionMultiplier);
             akaphone.CornerRadius = (float)padding_coef;
             akaphone.Padding = new Thickness(padding_coef);
-            
+
+            bool change_grid_vert = !horizontal && actual_schedule_part.DurationInMinutes <= MaxIntervalWhenChangeGrid;
+            double grid_offset = change_grid_vert ? 1 - Math.Pow(DimensionMultiplier, 2) : 0;
+            grid.RowDefinitions[1].Height = new GridLength(1 + grid_offset, GridUnitType.Star);
+            grid.RowDefinitions[2].Height = new GridLength(4 - grid_offset, GridUnitType.Star);
+
             if (previous_count_of_minutes >= Constants.MinutesPerWallpaperByDefault && actual_schedule_part.DurationInMinutes >= Constants.MinutesPerWallpaperByDefault)
                 return;
 
-            timespan_panel.Orientation = !horizontal && actual_schedule_part.DurationInMinutes < HRZ_Switch_Minutes ? StackOrientation.Horizontal : StackOrientation.Vertical;           
+            timespans_joined.Orientation = !horizontal && actual_schedule_part.DurationInMinutes <= MaxIntervalWhenShrink*1.25 ? StackOrientation.Horizontal : StackOrientation.Vertical;
 
-            double change = actual_schedule_part.DurationInMinutes / previous_count_of_minutes;
-            if (change > 1)//if this' interval became longer
+            if (horizontal || (actual_schedule_part.DurationInMinutes > MaxIntervalWhenShrink))
             {
-                if (horizontal || (actual_schedule_part.DurationInMinutes > ROWSP_Switch_Minutes && shrink_rate > 1))
-                {
-                    grid.RowDefinitions[0].Height = 20;
+                Grid.SetColumn(filepath_place, 0);
+                Grid.SetColumnSpan(filepath_place, 2);
 
-                    Grid.SetColumn(filepath_place, 0);
-                    Grid.SetColumnSpan(filepath_place, 2);
+                bool change_grid_hrz = horizontal && actual_schedule_part.DurationInMinutes < MaxIntervalWhenChangeGrid;
 
-                    Grid.SetRow(akaphone, 1);
-                    Grid.SetRowSpan(akaphone, 2);
+                Grid.SetColumn(buttons_container, change_grid_hrz ? 0 : 1);
+                Grid.SetColumnSpan(buttons_container, change_grid_hrz ? 2 : 1);
 
-                    Grid.SetRow(to_store_del_swiftly, 2);
-                    Grid.SetRowSpan(to_store_del_swiftly, 1);
-
-                    shrink_rate--;
-                }
-                
-                if (horizontal || (actual_schedule_part.DurationInMinutes >= HRZ_Switch_Minutes && shrink_rate > 0))
-                {
-                    to_store_del_swiftly.Children.Remove(del_button);
-                    grid.Children.Add(del_button, 1, 1);
-                    shrink_rate--;
-                }
+                Grid.SetRow(akaphone, change_grid_hrz ? 2 : 1);
+                Grid.SetRowSpan(akaphone, change_grid_hrz ? 1 : 2);
             }
             else {
-                if (!horizontal && actual_schedule_part.DurationInMinutes < HRZ_Switch_Minutes && shrink_rate < 1)
-                {
-                    grid.Children.Remove(del_button);
-                    to_store_del_swiftly.Children.Add(del_button);
-                    shrink_rate++;
-                }
-                if (!horizontal && actual_schedule_part.DurationInMinutes <= ROWSP_Switch_Minutes && shrink_rate < 2)
-                {
-                    grid.RowDefinitions[0].Height = 15;
+                Grid.SetColumn(filepath_place, 1);
+                Grid.SetColumnSpan(filepath_place, 1);
 
-                    Grid.SetColumn(filepath_place, 1);
-                    Grid.SetColumnSpan(filepath_place, 1);
-
-                    Grid.SetRow(akaphone, 0);
-                    Grid.SetRowSpan(akaphone, 3);
-
-                    Grid.SetRow(to_store_del_swiftly, 1);
-                    Grid.SetRowSpan(to_store_del_swiftly, 2);
-
-                    shrink_rate++;
-                }
-            } 
+                Grid.SetRow(akaphone, 0);
+                Grid.SetRowSpan(akaphone, 3);
+            }
         }
 
         private void TimePicker_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (this==null || e.PropertyName != "Time")
+            if (this == null || e.PropertyName != "Time")
                 return;
 
             (sender as View).IsEnabled = (sender as TimePicker).Time > TimeSpan.Zero;
 
             if (!has_initialized) { return; }
-               
             previous_count_of_minutes = actual_schedule_part.DurationInMinutes;
-            if (!property_changing_from_inside)
-            {
-                if (choose_start.Time >= choose_end.Time && actual_schedule_part.end_time.Days == 0)
-                {
-                    Vibration.Vibrate(200);
-                    mediator.OuchError("введён невозможный отрезок времени", this);
 
-                    property_changing_from_inside = true; //защита от рекурсии просто отпад :))
-                    (sender as TimePicker).Time = (sender == choose_start) ? actual_schedule_part.start_time : actual_schedule_part.end_time;
-                    property_changing_from_inside = false;
-                    return;
-                }
-              
-                if (sender == choose_end) {
-                    if(choose_end.Time == TimeSpan.Zero) {
-                        actual_schedule_part.end_time = TimeSpan.FromDays(1);
-                        choose_end.IsEnabled = false;
-                    }
-                    else { actual_schedule_part.end_time = choose_end.Time; }                   
+            if (property_changing_from_inside) { return; }
+
+            if (choose_start.Time < choose_end.Time || choose_end.Time==TimeSpan.Zero)
+            {
+                if (sender == choose_end)
+                {
+                    actual_schedule_part.end_time = choose_end.Time != TimeSpan.Zero ? choose_end.Time : TimeSpan.FromDays(1);
                 }
                 else { actual_schedule_part.start_time = choose_start.Time; }
 
                 SaveableChangeWasDone.Invoke(this, null);
-                TimedPicturesLoader.FitIntervalIn((sender == choose_end)? ChangeDirection.AffectDownwards : ChangeDirection.AffectUpwards, actual_schedule_part);
+                TimedPicturesLoader.FitIntervalIn((sender == choose_end) ? ChangeDirection.AffectDownwards : ChangeDirection.AffectUpwards, actual_schedule_part);
+                return;
             }
+
+            Vibration.Vibrate(200);
+            mediator.OuchError("введён невозможный отрезок времени", this);
+
+            property_changing_from_inside = true; //защита от рекурсии просто отпад :))
+            (sender as TimePicker).Time = (sender == choose_start) ? actual_schedule_part.start_time : actual_schedule_part.end_time;
+            property_changing_from_inside = false;
         }
 
         private void wallpaper_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -241,12 +217,15 @@ namespace malyar_apk
         }
 
         private void img_almost_Tapped(object sender, EventArgs e) { mediator.DeliverToast("Жмите 2 раза, чтобы поменять картинку"); }
+
         private async void source_img_really_Tapped(object sender, EventArgs e)
         {
             FileResult result = await FilePicker.PickAsync(PickOptions.Images);
             if (result == null)
                 return;
             (sender as Image).Source = ImageSource.FromFile(result.FullPath);
+
+            set_orig_button.IsEnabled = true;
         }
 
         private byte ClicksCount = 0;
@@ -273,6 +252,17 @@ namespace malyar_apk
         public void ProtectFromClickingDel(bool can_we_del)
         {
             this.del_button.IsEnabled = this.del_button.IsVisible = can_we_del;
+        }
+
+
+        private void almost2_Tapped(object sender, EventArgs e)
+        {
+            mediator.DeliverToast("Жмите 2 раза, чтобы взять поставленные сейчас обои");
+        }
+        private void set_crt_button_Pressed2(object sender, EventArgs e)
+        {
+            wallpaper.Source = FileImageSource.FromFile(DependencyService.Get<IOMediator>().PathToOriginalWP);
+            (sender as View).IsEnabled = false;
         }
     }
 }

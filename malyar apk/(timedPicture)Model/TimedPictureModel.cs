@@ -11,7 +11,7 @@ namespace malyar_apk.Shared {
     {
         [JsonPropertyOrder(0)]
         public string path_to_wallpaper { get; internal set; }
-        internal static readonly string retrieve_original_path = DependencyService.Get<IOMediator>().PathToOriginalWP;
+       
 
         internal TimeSpan start_time, end_time;
         public TimeSpan StartTime { 
@@ -53,11 +53,11 @@ namespace malyar_apk.Shared {
             return new TimeSpan(tsp.Hours, tsp.Minutes, 0);
         }
         
-        internal TimedPictureModel() { /*path_to_wallpaper = retrieve_original_path;*/ }
+       internal TimedPictureModel() {  }
 
        internal static TimedPictureModel OriginalForTheWholeDay()
        {
-            return new TimedPictureModel(retrieve_original_path, TimeSpan.Zero, TimeSpan.FromDays(1));
+            return new TimedPictureModel(DependencyService.Get<IOMediator>().PathToOriginalWP, TimeSpan.Zero, TimeSpan.FromDays(1));
        }
 
         public TimedPictureModel(string path_to_img, TimeSpan start, TimeSpan end)
