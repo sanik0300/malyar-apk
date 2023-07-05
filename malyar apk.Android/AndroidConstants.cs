@@ -3,7 +3,9 @@ namespace malyar_apk.Droid
 {
     internal sealed class AndroidConstants
     {
-        internal const int TaskCode_Save = 3, TaskCode_Load = 4;
+        internal const int FILEPICKER_RESULT_REQ_CODE = 2,
+                           TaskCode_Save = 3, 
+                           TaskCode_Load = 4;
         internal const string LIST_KEY = "LIST",
                               IO_SAVE_KEY = "SAVE",
                               RESULT_SERIALIZED = "SERIALIZED",

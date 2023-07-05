@@ -7,6 +7,9 @@ using Android.Content;
 using Xamarin.Forms;
 using malyar_apk.Shared;
 using System.IO;
+using Android.Graphics;
+using Android.Provider;
+using Android.Database;
 
 namespace malyar_apk.Droid
 {
@@ -81,9 +84,33 @@ namespace malyar_apk.Droid
             var iom = DependencyService.Get<IOMediator>() as IO_Implementation; //so far i haven't found another way to get global instance of UxImplementation
             switch (requestCode)
             {
+                case AndroidConstants.FILEPICKER_RESULT_REQ_CODE:
+                    if(data == null)
+                    {
+                        iom.OnFilePathDelivered(null);
+                        return;
+                    }
+
+                    string path_to_output,
+                           doc_id_substring = data.Data.Path.Split(':')[1],
+                           ssselection = MediaStore.Images.Media.InterfaceConsts.Id + " =? ";
+
+                    using(ICursor cursor = ContentResolver.Query(MediaStore.Images.Media.ExternalContentUri, 
+                                                                null, ssselection, 
+                                                                new string[] { doc_id_substring }, null)) 
+                    { 
+                        int columnIndex = cursor.GetColumnIndexOrThrow(MediaStore.Images.Media.InterfaceConsts.Data);
+                        cursor.MoveToFirst();
+                        path_to_output = cursor.GetString(columnIndex);
+                        
+                        cursor.Close();
+                    }
+                    iom.OnFilePathDelivered(path_to_output);
+                    break;
+
                 case AndroidConstants.TaskCode_Load:
                     var parcelables = data.GetParcelableArrayExtra(AndroidConstants.RESULT_DESERIALIZED);
-                    //bool origs_present = resultCode==Result.Canceled;
+
                     List<TimedPictureModel> future_schedule = null;
                     
                     if (parcelables != null)
@@ -92,13 +119,11 @@ namespace malyar_apk.Droid
                         foreach (IParcelable p in parcelables)
                         {
                             future_schedule.Add((p as TPModelParcelable).source);
-                            //if (origs_present) { continue; }
-                            //origs_present = tpm.path_to_wallpaper == Constants.just_original_keyword;
                         }
                     }
-       
                     iom.OnScheduleAdded(future_schedule);
                     break;
+
                 case AndroidConstants.TaskCode_Save:
                     iom.OnScheduleSaved();
                     break;
@@ -126,5 +151,10 @@ namespace malyar_apk.Droid
             InForeground = false;
         }
 
+        protected override void OnDestroy()
+        {
+            ContextDependentObject.BaseContext = null;
+            base.OnDestroy();
+        }
     }
 }

@@ -39,6 +39,10 @@ namespace malyar_apk.Shared {
         internal const int MinLegitMinutesDelta = 5;
 
         public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged(string prop_name)
+        {
+            PropertyChanged.Invoke(this, new PropertyChangedEventArgs(prop_name));
+        }
 
         internal double DurationInMinutes { get
             {
@@ -112,6 +116,15 @@ namespace malyar_apk.Shared {
                     other.StartTime = TimeSpan.FromMinutes(this.end_time.TotalMinutes);
                     break;
             }
+        }
+
+        public void OnNewWallpaperPathGotten(object sender, ValuePassedEventArgs<string> e)
+        {
+            DependencyService.Get<IOMediator>().FilePathDelivered -= this.OnNewWallpaperPathGotten;
+            if (e.value == null) { return; }
+
+            path_to_wallpaper = e.value;
+            PropertyChanged.Invoke(this, new PropertyChangedEventArgs(nameof(path_to_wallpaper)));           
         }
     }
 }

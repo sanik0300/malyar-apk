@@ -15,7 +15,7 @@ namespace malyar_apk
         bool horizontal;
         private bool user_went_to_other_page = false;
 
-        private IOMediator memdiator;
+        private static IOMediator memdiator;
         public MainPage()
         {          
             InitializeComponent();
@@ -26,19 +26,21 @@ namespace malyar_apk
             memdiator.ScheduleLoaded += ScheduleLoaded;
         }
 
-        private void ScheduleLoaded(object sender, ScheduleAddedEventArgs args)
+        private void ScheduleLoaded(object sender, ValuePassedEventArgs<List<TimedPictureModel>> args)
         {
             var IUM = DependencyService.Get<IUXMediator>();
-            if (args.TPMs == null)
+            var TPMs = args.value as List<TimedPictureModel>;
+
+            if (TPMs == null)
             {
                 TimedPicturesLoader.FitIntervalIn(ChangeDirection.InsertNew, TimedPictureModel.OriginalForTheWholeDay());
                 IUM.OuchError("Не удалось расшифровать расписание обоев", schedule_container.Children[0]);
                 return;
             }
 
-            for (int i = 0; i < args.TPMs.Count; ++i)
+            for (int i = 0; i < TPMs.Count; ++i)
             {
-                var SP = new SchedulePiece(args.TPMs[i]);
+                var SP = new SchedulePiece(TPMs[i]);
 
                 SP.SaveableChangeWasDone += OnSaveableChangeWasDone;
                 schedule_container.Children.Add(SP);
@@ -151,7 +153,7 @@ namespace malyar_apk
 
             TimedPicturesLoader.FitIntervalIn(ChangeDirection.InsertNew, TimedPictureModel.OriginalForTheWholeDay());
             (schedule_container.Children[0] as SchedulePiece).ProtectFromClickingDel(schedule_container.Children.Count > 1);
-
+            
             //else - wait for the event of ~deserialization~
         }
 
@@ -182,15 +184,20 @@ namespace malyar_apk
         }
 
         private string filepath_on_the_way = null;
-        private async void preview_Tapped(object sender, EventArgs e)
+        private void preview_Tapped(object sender, EventArgs e)
         {
-            FileResult result = await FilePicker.PickAsync(PickOptions.Images);
-            if (result == null)
-                return;
-            filepath_on_the_way = result.FullPath;
-            (sender as Image).Source = ImageSource.FromFile(result.FullPath);
-            
-            addnew.IsEnabled =  CheckConstructorCompleteness() && end_new.Time > begin_new.Time;
+            memdiator.AskForFileInPicker();
+            memdiator.FilePathDelivered += OnFilePathDelivered;
+        }
+        private void OnFilePathDelivered(object sender, ValuePassedEventArgs<string> e)
+        {
+            if (e.value != null)
+            {
+                filepath_on_the_way = e.value;
+                preview.Source = ImageSource.FromFile(filepath_on_the_way);
+            }
+            addnew.IsEnabled = CheckConstructorCompleteness() && end_new.Time > begin_new.Time;
+            memdiator.FilePathDelivered -= OnFilePathDelivered;
         }
 
         private void addnew_Clicked(object sender, EventArgs e)

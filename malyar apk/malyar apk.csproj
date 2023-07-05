@@ -13,6 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="%28timedPicture%29Model\ScheduleAddedEventArgs.cs" />
     <Compile Remove="PhoneDimesionsConverters.cs" />
     <Compile Remove="views\SeparatorCustom.xaml.cs" />
   </ItemGroup>

@@ -36,7 +36,8 @@ namespace malyar_apk
             if (File.Exists(IOM.PathToSchedule))
             {
                 IOM.ScheduleLoaded += (s, args) => {
-                    if(args.TPMs != null) { _schedule = args.TPMs; }
+                    var TPMs = args.value as List<TimedPictureModel>;
+                    if(TPMs != null) { _schedule = TPMs; }
                 };
                 IOM.BeginLoadingSchedule();
                 return true;

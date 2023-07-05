@@ -9,8 +9,8 @@ namespace malyar_apk
         string PathToSchedule { get; }
         string PathToOriginalWP { get; }
 
-        event EventHandler<ScheduleAddedEventArgs> ScheduleLoaded;
-        void OnScheduleAdded(List<TimedPictureModel> list/*, bool originals_present*/);
+        event EventHandler<ValuePassedEventArgs<List<TimedPictureModel>>> ScheduleLoaded;
+        void OnScheduleAdded(List<TimedPictureModel> list);
 
         void BeginLoadingSchedule();
         void SaveSchedule(List<TimedPictureModel> list);
@@ -19,5 +19,9 @@ namespace malyar_apk
         void OnScheduleSaved();
         bool WasInitialized { get; set; }
         void RememberOriginalWP();
+
+        void AskForFileInPicker(TimedPictureModel who_asked=null);
+        event EventHandler<ValuePassedEventArgs<string>> FilePathDelivered;
+        void OnFilePathDelivered(string filePath);
     }
 }

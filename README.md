@@ -1,4 +1,1 @@
-**#malyar-apk 0.9a**
-this commit is a stability/optimization patch before alpha release:
-- fixed the moment of new wallpaper intervals addition if there was a fail to deserialize their schedule
-- deleted the unnecesarry circular progress bar in the horizontal layout to shrink the APK (twice:))
+In this commit there has been implemented a way to retrive actual file paths of the images, therefore solving the problem with constant cashing of image files
