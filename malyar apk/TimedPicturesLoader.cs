@@ -33,10 +33,10 @@ namespace malyar_apk
             IOMediator IOM = DependencyService.Get<IOMediator>();
             IOM.WasInitialized = true;
 
-            if (File.Exists(IOM.PathToSchedule))
+            if (File.Exists(IOM.PathToSchedule) || File.Exists(IOM.PathToSchedule+".json"))
             {
                 IOM.ScheduleLoaded += (s, args) => {
-                    var TPMs = args.value as List<TimedPictureModel>;
+                    var TPMs = args.value;
                     if(TPMs != null) { _schedule = TPMs; }
                 };
                 IOM.BeginLoadingSchedule();
@@ -56,7 +56,7 @@ namespace malyar_apk
 
             if (_schedule.Count == 1)
             {
-                ISM.SetWallpaperConstant(_schedule[0]);
+                ISM.SetWallpaperConstant(_schedule[0].path_to_wallpaper);
             }
             else { ISM.AssignActionsOfChange(_schedule); }   
         }
@@ -175,10 +175,10 @@ namespace malyar_apk
                     if (span[1] - span[0] >= 1)
                     {
                         if(interval.path_to_wallpaper == _schedule[(int)span[0]].path_to_wallpaper)  {
-                            _schedule[(int)span[0]].EndTime = TimeSpan.FromMinutes(interval.end_time.TotalMinutes);
+                            _schedule[(int)span[0]].EndTime = interval.end_time;
                         }
                         else {
-                            _schedule[(int)span[1]].StartTime = TimeSpan.FromMinutes(interval.start_time.TotalMinutes);
+                            _schedule[(int)span[1]].StartTime = interval.start_time;
                         }
                     }
                     else { return; }//это всё, тикаем отсюда

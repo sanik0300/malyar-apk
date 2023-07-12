@@ -1,1 +1,1 @@
-In this commit there has been implemented a way to retrive actual file paths of the images, therefore solving the problem with constant cashing of image files
+In this commit the way of storing data about wallpaper change times was changed from JSON to plain text

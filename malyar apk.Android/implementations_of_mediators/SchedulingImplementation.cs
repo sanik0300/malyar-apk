@@ -1,15 +1,9 @@
 ﻿using Android.App;
 using Android.Content;
 using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Xamarin.Forms;
-using malyar_apk;
 using malyar_apk.Shared;
 using Android.Graphics;
 
@@ -53,11 +47,11 @@ namespace malyar_apk.Droid
             }           
         }
 
-        public void SetWallpaperConstant(TimedPictureModel tpm)
+        public void SetWallpaperConstant(string path_to_wp)
         {
             using (var WM = WallpaperManager.GetInstance(BaseContext))
             {
-                WM.SetBitmap(BitmapFactory.DecodeFile(tpm.path_to_wallpaper));
+                WM.SetBitmap(BitmapFactory.DecodeFile(path_to_wp));
             }
         }
 

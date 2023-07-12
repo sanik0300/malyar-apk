@@ -1,9 +1,6 @@
 ﻿using Android.App;
 using Android.Content;
 using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
 using Android.Util;
 using malyar_apk.Shared;
 using System;
@@ -36,7 +33,7 @@ namespace malyar_apk.Droid
             else if (total_minutes == 0)
             {
                 string the_earliest_tpm_path;
-                using (StreamReader sr = new StreamReader(new FileStream(ContextDependentObject.path_to_schedule, FileMode.Open, FileAccess.Read, FileShare.Read)))
+                using (StreamReader sr = new StreamReader(new FileStream(IO_Implementation.fpath_to_schedule, FileMode.Open, FileAccess.Read, FileShare.Read)))
                 {
                     for (uint i = 0; i < 2; ++i) { sr.ReadLine(); }//skip start-array and start-object token
 
@@ -66,7 +63,7 @@ namespace malyar_apk.Droid
             if(Build.VERSION.SdkInt >= BuildVersionCodes.Kitkat)//api level 19
             {
                 //Собираем pending intent на следующий идентичный заход из чего есть
-                Intent inner = new Intent(Android.App.Application.Context, typeof(AlarmReceiver)).SetAction(AndroidConstants.WP_CHANGE_ALARM)
+                Intent inner = new Intent(Application.Context, typeof(AlarmReceiver)).SetAction(AndroidConstants.WP_CHANGE_ALARM)
                                 .PutExtra(AndroidConstants.FILEPATH_EXTRA_KEY, filepath)
                                 .PutExtra(Intent.ExtraIndex, indx);
                 PendingIntent PI = SchedulingImplementation.FormP_IntentForReceiver(intent.GetIntExtra(AndroidConstants.REQUEST_CODE_EXTRA_KEY, 0), inner);

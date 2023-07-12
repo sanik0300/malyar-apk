@@ -16,7 +16,7 @@ namespace malyar_apk.Shared {
         internal TimeSpan start_time, end_time;
         public TimeSpan StartTime { 
             get { return start_time; } 
-            set {
+            internal set {
                 start_time = value;
                 if (PropertyChanged == null)
                     return;
@@ -28,7 +28,7 @@ namespace malyar_apk.Shared {
         public TimeSpan EndTime
         {
             get { return end_time; }
-            set {
+            internal set {
                 end_time = value;
                 if (PropertyChanged == null)
                     return;
@@ -57,7 +57,7 @@ namespace malyar_apk.Shared {
             return new TimeSpan(tsp.Hours, tsp.Minutes, 0);
         }
         
-       internal TimedPictureModel() {  }
+       internal TimedPictureModel() { }
 
        internal static TimedPictureModel OriginalForTheWholeDay()
        {
@@ -69,6 +69,11 @@ namespace malyar_apk.Shared {
             this.path_to_wallpaper = path_to_img;
             this.start_time = start;
             this.end_time = end;
+        }
+        public TimedPictureModel(string path_to_img, TimeSpan start)
+        {
+            this.path_to_wallpaper = path_to_img;
+            this.start_time = start;
         }
 
         public override string ToString()
@@ -102,7 +107,7 @@ namespace malyar_apk.Shared {
 
         public object Clone()
         {            
-            return new TimedPictureModel(this.path_to_wallpaper, TimeSpan.FromMinutes(this.start_time.TotalMinutes), TimeSpan.FromMinutes(this.end_time.TotalMinutes));
+            return new TimedPictureModel(this.path_to_wallpaper, this.start_time, this.end_time);
         }
 
         internal void Join(TimedPictureModel other, ChangeDirection direction)
@@ -110,21 +115,19 @@ namespace malyar_apk.Shared {
             switch (direction)
             {
                 case ChangeDirection.AffectUpwards:
-                    other.EndTime = TimeSpan.FromMinutes(this.start_time.TotalMinutes);
+                    other.EndTime = this.start_time;
                     break;
                 case ChangeDirection.AffectDownwards:
-                    other.StartTime = TimeSpan.FromMinutes(this.end_time.TotalMinutes);
+                    other.StartTime = this.end_time;
                     break;
             }
         }
 
         public void OnNewWallpaperPathGotten(object sender, ValuePassedEventArgs<string> e)
-        {
-            DependencyService.Get<IOMediator>().FilePathDelivered -= this.OnNewWallpaperPathGotten;
-            if (e.value == null) { return; }
-
+        {       
             path_to_wallpaper = e.value;
-            PropertyChanged.Invoke(this, new PropertyChangedEventArgs(nameof(path_to_wallpaper)));           
+            PropertyChanged.Invoke(this, new PropertyChangedEventArgs(nameof(path_to_wallpaper)));
+            DependencyService.Get<IOMediator>().FilePathDelivered -= this.OnNewWallpaperPathGotten;           
         }
     }
 }

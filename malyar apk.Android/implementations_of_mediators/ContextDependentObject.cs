@@ -14,8 +14,6 @@ namespace malyar_apk.Droid
     //don't confuse this with context_bound_object ;)
     internal abstract class ContextDependentObject
     {
-        static public MainActivity BaseContext;
-        static public string path_to_schedule;
-        
+        static internal MainActivity BaseContext;    
     }
 }

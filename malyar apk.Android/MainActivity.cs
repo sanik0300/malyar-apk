@@ -6,8 +6,6 @@ using System.Collections.Generic;
 using Android.Content;
 using Xamarin.Forms;
 using malyar_apk.Shared;
-using System.IO;
-using Android.Graphics;
 using Android.Provider;
 using Android.Database;
 
@@ -28,9 +26,7 @@ namespace malyar_apk.Droid
 
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
-            LoadApplication(new App());
-   
-            ContextDependentObject.path_to_schedule = IO_Implementation.ConvertFilenameToFilepath("schedule.json");
+            LoadApplication(new App());   
         }
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
@@ -85,11 +81,8 @@ namespace malyar_apk.Droid
             switch (requestCode)
             {
                 case AndroidConstants.FILEPICKER_RESULT_REQ_CODE:
-                    if(data == null)
-                    {
-                        iom.OnFilePathDelivered(null);
-                        return;
-                    }
+                    
+                    if(resultCode != Result.Ok) { return; }                  
 
                     string path_to_output,
                            doc_id_substring = data.Data.Path.Split(':')[1],

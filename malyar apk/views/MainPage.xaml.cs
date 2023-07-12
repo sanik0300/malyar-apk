@@ -21,7 +21,7 @@ namespace malyar_apk
             InitializeComponent();
             TimedPicturesLoader.IntervalDeleted += Interval_WasDeleted;
             TimedPicturesLoader.IntervalInserted += Interval_WasInserted;
-            jsonIOmanager.ProgressChanged += Serialization_ProgressChanged;
+            GeneralIO.ProgressChanged += Serialization_ProgressChanged;
             memdiator = DependencyService.Get<IOMediator>();
             memdiator.ScheduleLoaded += ScheduleLoaded;
         }
@@ -202,9 +202,6 @@ namespace malyar_apk
 
         private void addnew_Clicked(object sender, EventArgs e)
         {
-            if (filepath_on_the_way == null)
-                return;
-
             var model = new TimedPictureModel(filepath_on_the_way, begin_new.Time, whole_day.IsChecked && checkbox_pair.IsVisible ? TimeSpan.FromDays(1) : end_new.Time);
             TimedPicturesLoader.FitIntervalIn(ChangeDirection.InsertNew, model);         
         }

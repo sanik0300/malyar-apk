@@ -16,9 +16,10 @@ namespace malyar_apk.Droid
     {
         public bool WasInitialized { get; set; }
      
-        public string PathToSchedule { get { return path_to_schedule; } }
+        public string PathToSchedule { get { return fpath_to_schedule; } }
         
-        internal static  readonly string fpath_to_orig = ConvertFilenameToFilepath("original.png");
+        internal static readonly string fpath_to_orig = System.IO.Path.Combine(BaseContext.GetExternalFilesDir(null).AbsolutePath, "original.png");
+        internal static readonly string fpath_to_schedule = System.IO.Path.Combine(BaseContext.GetExternalFilesDir(null).AbsolutePath, "schedule");
         public string PathToOriginalWP { get { return fpath_to_orig; } }    
 
         public void RememberOriginalWP()
@@ -48,12 +49,12 @@ namespace malyar_apk.Droid
         }
         public void BeginLoadingSchedule()
         {
-            BaseContext.StartIO(path_to_schedule, false);
+            BaseContext.StartIO(fpath_to_schedule, false);
         }
 
         public void SaveSchedule(List<TimedPictureModel> list)
         {
-            BaseContext.StartIO(path_to_schedule, true, list);
+            BaseContext.StartIO(fpath_to_schedule, true, list);
         }
 
         internal bool has_originals = true;
@@ -63,18 +64,13 @@ namespace malyar_apk.Droid
             ScheduleSaved.Invoke(this, EventArgs.Empty);
         }
 
-        internal static string ConvertFilenameToFilepath(string filename)
-        {
-            return System.IO.Path.Combine(BaseContext.GetExternalFilesDir(null).AbsolutePath, filename);
-        }
-
         public void AskForFileInPicker(TimedPictureModel who_asked = null)
         {
             Intent choose_file_perhaps = new Intent(Intent.ActionGetContent);
             choose_file_perhaps.SetType("image/*");
             choose_file_perhaps = Intent.CreateChooser(choose_file_perhaps, "ну выбирай штоли...");
 
-            ContextDependentObject.BaseContext.StartActivityForResult(choose_file_perhaps, AndroidConstants.FILEPICKER_RESULT_REQ_CODE);
+            BaseContext.StartActivityForResult(choose_file_perhaps, AndroidConstants.FILEPICKER_RESULT_REQ_CODE);
             if (who_asked == null) { return;  }
             this.FilePathDelivered += who_asked.OnNewWallpaperPathGotten;
         }
