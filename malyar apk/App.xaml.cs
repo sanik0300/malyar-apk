@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 
 namespace malyar_apk
 {
-    
     public partial class App : Application
     {
         public App()
@@ -21,16 +20,11 @@ namespace malyar_apk
             else { new MainPage(); }
         }
 
+        public static bool IsRunning { get; private set; }
+
         protected override async void OnStart()
         {
-            if (Preferences.Get(Constants.FIRST_LAUNCH_KEY, true))
-            {
-                IUXMediator ux_thing = DependencyService.Get<IUXMediator>();
-                if (!ux_thing.BackgroundWorkAlreadyPrepared())
-                {
-                    ux_thing.InitializeBackgroundWork();
-                }
-            }
+            base.OnStart();
 
             if (await Permissions.CheckStatusAsync<Permissions.StorageRead>() != PermissionStatus.Granted)
             {
@@ -53,7 +47,7 @@ namespace malyar_apk
             {
                 await Permissions.RequestAsync<Permissions.StorageWrite>();
             }
-            Preferences.Set(Constants.FIRST_LAUNCH_KEY, false);
+            IsRunning = true;
         }
     }
 }

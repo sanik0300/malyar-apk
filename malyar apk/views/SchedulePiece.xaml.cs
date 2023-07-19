@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 using System.ComponentModel;
 using System.IO;
 using malyar_apk.Shared;
@@ -58,7 +57,6 @@ namespace malyar_apk
             }
            has_initialized = true;
         }
-
         private void OnMessageReceived(IOMediator sender)
         {
             UpdateImgRepresentation();
@@ -70,6 +68,13 @@ namespace malyar_apk
             image_defect = !fileexists;
             this.filepath_here.Text = fileexists ? actual_schedule_part.path_to_wallpaper : actual_schedule_part.path_to_wallpaper.Insert(0, "(НЕ НАЙДЕН) ");
             wallpaper.Source = fileexists ? ImageSource.FromFile(actual_schedule_part.path_to_wallpaper) : ImageSource.FromResource(Constants.FileNotFoundResourcePath);
+        }
+        public void PingImageRepresentation()
+        {
+            if(File.Exists(actual_schedule_part.path_to_wallpaper) != image_defect) { return; }
+            UpdateImgRepresentation();
+            //do ONLY if image-defect is "true" but the image file is actually ok 
+            //or vice versa if file is actually cant be found but image-defect is "false"
         }
 
         private void schedule_part_PropertyChanged(object sender, PropertyChangedEventArgs e)

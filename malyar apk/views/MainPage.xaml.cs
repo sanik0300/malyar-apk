@@ -15,29 +15,26 @@ namespace malyar_apk
         bool horizontal;
         private bool user_went_to_other_page = false;
 
-        private static IOMediator memdiator;
+        private static IOMediator memdiator = DependencyService.Get<IOMediator>();
         public MainPage()
         {          
             InitializeComponent();
             TimedPicturesLoader.IntervalDeleted += Interval_WasDeleted;
             TimedPicturesLoader.IntervalInserted += Interval_WasInserted;
             GeneralIO.ProgressChanged += Serialization_ProgressChanged;
-            memdiator = DependencyService.Get<IOMediator>();
-            memdiator.ScheduleLoaded += ScheduleLoaded;
+            
+            TimedPicturesLoader.ReVisualiseSchedule += RevisualiseSchedule;
+            memdiator.UpdateWhichImagesExist += (s, a) => {
+                foreach (SchedulePiece SP in schedule_container.Children)
+                {
+                    SP.PingImageRepresentation();
+                }
+            };
         }
-
-        private void ScheduleLoaded(object sender, ValuePassedEventArgs<List<TimedPictureModel>> args)
+       
+        private void RevisualiseSchedule(object sender, ValuePassedEventArgs<List<TimedPictureModel>> args)
         {
-            var IUM = DependencyService.Get<IUXMediator>();
-            var TPMs = args.value as List<TimedPictureModel>;
-
-            if (TPMs == null)
-            {
-                TimedPicturesLoader.FitIntervalIn(ChangeDirection.InsertNew, TimedPictureModel.OriginalForTheWholeDay());
-                IUM.OuchError("Не удалось расшифровать расписание обоев", schedule_container.Children[0]);
-                return;
-            }
-
+            var TPMs = args.value;
             for (int i = 0; i < TPMs.Count; ++i)
             {
                 var SP = new SchedulePiece(TPMs[i]);
@@ -45,7 +42,16 @@ namespace malyar_apk
                 SP.SaveableChangeWasDone += OnSaveableChangeWasDone;
                 schedule_container.Children.Add(SP);
             }
-            IUM.DeliverToast("Загружено успешно");
+            
+            switch((AimOfReVisualise)sender)
+            {
+                case AimOfReVisualise.LoadedOk:
+                    DependencyService.Get<IUXMediator>().DeliverToast("Загружено успешно");
+                    break;
+                case AimOfReVisualise.LoadedFail:
+                    DependencyService.Get<IUXMediator>().OuchError("Не удалось расшифровать расписание обоев", schedule_container.Children[0]);
+                    break;
+            }
 
             if (schedule_container.Children.Count == 0)
                 return;
@@ -150,10 +156,7 @@ namespace malyar_apk
 
             if (TimedPicturesLoader.CheckOutExistingOnes())
                 return;
-
-            TimedPicturesLoader.FitIntervalIn(ChangeDirection.InsertNew, TimedPictureModel.OriginalForTheWholeDay());
-            (schedule_container.Children[0] as SchedulePiece).ProtectFromClickingDel(schedule_container.Children.Count > 1);
-            
+   
             //else - wait for the event of ~deserialization~
         }
 

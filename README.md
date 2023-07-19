@@ -1,1 +1,1 @@
-In this commit the way of storing data about wallpaper change times was changed from JSON to plain text
+In this commit I fixed the stability of wallpaper change process when the app is off

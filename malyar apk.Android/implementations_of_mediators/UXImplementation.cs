@@ -19,8 +19,6 @@ namespace malyar_apk.Droid
 {
     class UxImplementation : ContextDependentObject, IUXMediator
     {
-
-        private bool channelexists;
         public async void DenoteSuccesfulSave(float[] percentages)
         {
             var remote_view = new RemoteViews(Xamarin.Essentials.AppInfo.PackageName, Resource.Layout.CustomSaveNotification);
@@ -50,36 +48,36 @@ namespace malyar_apk.Droid
             }
 
             NotificationCompat.Builder builder;
-            var manager = (NotificationManager)BaseContext.GetSystemService(Context.NotificationService);
-
-            if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+            using (var manager = (NotificationManager)BaseContext.GetSystemService(Context.NotificationService))
             {
-                string CHANNELLID = "saves_here";
-                if (!channelexists)
+                if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
                 {
+                    string CHANNELLID = "saves_here";
+
                     NotificationChannel channel = new NotificationChannel(CHANNELLID, CHANNELLID, NotificationImportance.High);
                     manager.CreateNotificationChannel(channel);
-                    channelexists = true;
+
+                    builder = new NotificationCompat.Builder(BaseContext, CHANNELLID);
                 }
-                builder = new NotificationCompat.Builder(BaseContext, CHANNELLID);
-            }
-            else
-            {
-                builder = new NotificationCompat.Builder(BaseContext);
-            }
+                else {
+                    builder = new NotificationCompat.Builder(BaseContext);
+                }
 
-            builder = builder.SetContent(remote_view).SetSmallIcon(Resource.Drawable.save_small_icon);
+                builder = builder.SetContent(remote_view).SetSmallIcon(Resource.Drawable.save_small_icon);
 
-            manager.Notify(1, builder.Build());
-            
+                manager.Notify(1, builder.Build());
+
                 await Task.Delay(2000);
-                manager.Cancel(1);
-            
-            builder.Dispose();
-            manager.Dispose();
+                if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+                {
+                    manager.DeleteNotificationChannel("saves_here");
+                }
+
+                builder.Dispose();
+            }
         }
 
-        public bool BackgroundWorkAlreadyPrepared()
+        /*public bool BackgroundWorkAlreadyPrepared()
         {
             using (PackageManager pm = BaseContext.PackageManager) 
             {
@@ -91,7 +89,7 @@ namespace malyar_apk.Droid
         public void InitializeBackgroundWork()
         {
             Android.App.Application.Context.RegisterReceiver(new AlarmReceiver(), new IntentFilter(AndroidConstants.WP_CHANGE_ALARM));
-        }
+        }*/
 
         public void DeliverToast(string text)
         {
@@ -115,6 +113,29 @@ namespace malyar_apk.Droid
             }
             
             Toast.MakeText(BaseContext, description, ToastLength.Short).Show();          
+        }
+
+        static internal Notification GetNotificationForWaiting(Context cntx)
+        {
+            NotificationCompat.Builder builder;
+            using (var manager = (NotificationManager)cntx.GetSystemService(Context.NotificationService))
+            {
+                if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+                {
+                    NotificationChannel channel = new NotificationChannel(AndroidConstants.WP_CHANGE_NOTIF_CHANNEL,
+                                                                            AndroidConstants.WP_CHANGE_NOTIF_CHANNEL,
+                                                                            NotificationImportance.Low);
+                    manager.CreateNotificationChannel(channel);
+
+                    builder = new NotificationCompat.Builder(cntx, AndroidConstants.WP_CHANGE_NOTIF_CHANNEL);
+                }
+                else {
+                    builder = new NotificationCompat.Builder(cntx);
+                }
+            }
+            Notification result = builder.SetSmallIcon(Resource.Drawable.notification_paint_roller).SetContentTitle("ждём смены обоев").Build();
+            builder.Dispose();
+            return result;
         }
     }
 }

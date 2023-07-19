@@ -10,18 +10,21 @@ namespace malyar_apk
         string PathToOriginalWP { get; }
 
         event EventHandler<ValuePassedEventArgs<List<TimedPictureModel>>> ScheduleLoaded;
-        void OnScheduleAdded(List<TimedPictureModel> list);
+        //void OnScheduleAdded(List<TimedPictureModel> list);
 
         void BeginLoadingSchedule();
         void SaveSchedule(List<TimedPictureModel> list);
 
         event EventHandler ScheduleSaved;
-        void OnScheduleSaved();
+        //void OnScheduleSaved();
         bool WasInitialized { get; set; }
         void RememberOriginalWP();
 
         void AskForFileInPicker(TimedPictureModel who_asked=null);
         event EventHandler<ValuePassedEventArgs<string>> FilePathDelivered;
-        void OnFilePathDelivered(string filePath);
+        //void OnFilePathDelivered(string filePath);
+
+        event EventHandler UpdateWhichImagesExist;
+        //void OnUpdateWhichFilesExist();
     }
 }

@@ -11,7 +11,7 @@ using System.IO;
 
 namespace malyar_apk.Droid
 {
-    [BroadcastReceiver(Enabled = true, Exported =true)]
+    [BroadcastReceiver(Enabled = true)]
     [IntentFilter(new string[] { AndroidConstants.WP_CHANGE_ALARM })]
     public class AlarmReceiver : BroadcastReceiver
     {
@@ -53,12 +53,13 @@ namespace malyar_apk.Droid
                 call_service.PutExtra(Intent.ExtraIndex, indx);
             }
 
-            BackgroundWorker bw = new BackgroundWorker();
+            context.StartForegroundService(call_service);
+            /*BackgroundWorker bw = new BackgroundWorker();
             bw.DoWork += (ses, args) =>
-            {
+            //{
                 context.StartService(call_service);
             };
-            bw.RunWorkerAsync();//пАехали)))
+            bw.RunWorkerAsync();//пАехали)))*/
 
             if(Build.VERSION.SdkInt >= BuildVersionCodes.Kitkat)//api level 19
             {

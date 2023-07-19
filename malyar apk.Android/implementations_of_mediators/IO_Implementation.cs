@@ -81,5 +81,11 @@ namespace malyar_apk.Droid
         {
             FilePathDelivered.Invoke(this, new ValuePassedEventArgs<string>(filePath));
         }
+
+        public event EventHandler UpdateWhichImagesExist;
+        public void OnUpdateWhichFilesExist()
+        {
+            UpdateWhichImagesExist.Invoke(this, EventArgs.Empty);
+        }
     }
 }

@@ -17,16 +17,24 @@ namespace malyar_apk.Droid
     {
         private IdlenessEndReceiver idleness_receiver;
         public bool InForeground { get; private set; }
-        
+
+        internal WPServiceConnection WPCNN = new WPServiceConnection();
+
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
             ContextDependentObject.BaseContext = this;
-            this.InForeground = false;
 
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
             LoadApplication(new App());   
+
+            if(!App.IsRunning) { return; }
+            TimedPicturesLoader.OnNeedToVisualiseSchedule(AimOfReVisualise.JustUpdate);
+            (DependencyService.Get<IOMediator>() as IO_Implementation).OnUpdateWhichFilesExist();
+            
+            if (!WaitForWPChangeService.Exists) { return; }
+            this.BindService(new Intent(Android.App.Application.Context, typeof(WaitForWPChangeService)), WPCNN, Bind.AutoCreate);
         }
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
@@ -45,12 +53,7 @@ namespace malyar_apk.Droid
 
             if (save)
             {
-                var almost_parcels = new TPModelParcelable[models.Count];
-                for (int i = 0; i < models.Count; ++i)
-                {
-                    almost_parcels[i] = new TPModelParcelable(models[i]);
-                }
-                intent.PutExtra(AndroidConstants.LIST_KEY, almost_parcels);
+                intent.PutExtra(AndroidConstants.LIST_KEY, ContextDependentObject.IlistToParcelables(models));
             }
 
             var PM = (PowerManager)GetSystemService(Context.PowerService);
@@ -65,13 +68,13 @@ namespace malyar_apk.Droid
                 filter.AddAction(Intent.ActionScreenOn);
                 filter.AddAction(AndroidConstants.START_IO_LOCAL_ACTION);
                 RegisterReceiver(idleness_receiver, filter);
-            }       
+            }     
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
             base.OnActivityResult(requestCode, resultCode, data);
-            if(idleness_receiver != null)
+            if (idleness_receiver != null)
             {
                 UnregisterReceiver(idleness_receiver);
                 idleness_receiver = null;
@@ -108,11 +111,7 @@ namespace malyar_apk.Droid
                     
                     if (parcelables != null)
                     {
-                        future_schedule = new List<TimedPictureModel>(parcelables.Length);
-                        foreach (IParcelable p in parcelables)
-                        {
-                            future_schedule.Add((p as TPModelParcelable).source);
-                        }
+                        future_schedule = ContextDependentObject.ParcelablesToList(parcelables);
                     }
                     iom.OnScheduleAdded(future_schedule);
                     break;
@@ -141,11 +140,25 @@ namespace malyar_apk.Droid
         protected override void OnStop()
         {
             base.OnStop();
-            InForeground = false;
+
+            if (!WPCNN.IsConnected) { return; }
+            WPCNN._Binder.SetServiceToForeground();
+        }
+
+        protected override void OnStart()
+        {
+            base.OnStart();
+
+            (DependencyService.Get<IOMediator>() as IO_Implementation).OnUpdateWhichFilesExist();
+            
+            if (!WPCNN.IsConnected) { return; }
+            WPCNN._Binder.SetServiceToBackground();
         }
 
         protected override void OnDestroy()
         {
+            if(WPCNN.IsConnected) { this.UnbindService(WPCNN); }
+
             ContextDependentObject.BaseContext = null;
             base.OnDestroy();
         }
