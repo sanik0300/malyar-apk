@@ -1,9 +1,11 @@
 ﻿using Android.App;
 using Android.Content;
+using Android.Content.PM;
 using Android.OS;
 using Android.Runtime;
 using malyar_apk.Shared;
 using System;
+using System.Threading;
 
 namespace malyar_apk.Droid
 {
@@ -11,6 +13,7 @@ namespace malyar_apk.Droid
     internal class WaitForWPChangeService : Service
     {
         public static bool Exists { get; private set; }
+        private bool IsForegroundCurrently = false;
         public override IBinder OnBind(Intent intent) { 
             return new MyBinder(this); 
         }
@@ -20,12 +23,33 @@ namespace malyar_apk.Droid
         public override StartCommandResult OnStartCommand(Intent intent, [GeneratedEnum] StartCommandFlags flags, int startId)
         {
             Exists = true;
+            BroadcastWasReceived += this.DisplayCountdownByNotification;
+
             IParcelable[] tpm_parcelables = intent.GetParcelableArrayExtra(AndroidConstants.LIST_KEY);
 
             AssignAlarms(tpm_parcelables);
 
             return base.OnStartCommand(intent, flags, startId);
         }
+        
+        public new void StopForeground(bool remove)
+        {
+            base.StopForeground(remove);
+            IsForegroundCurrently = false;
+        }
+        public new void StartForeground(int id, Notification? notification)
+        {
+            base.StartForeground(id, notification);
+            IsForegroundCurrently = true;
+        }
+
+
+        private static event EventHandler BroadcastWasReceived;
+        internal static void OnBroadcastWasReceived(BroadcastReceiver from_what)
+        {
+            BroadcastWasReceived.Invoke(from_what, EventArgs.Empty);
+        }
+        
 
         internal void AssignAlarms(IParcelable[] sources)
         {
@@ -81,9 +105,31 @@ namespace malyar_apk.Droid
             }
         }
 
+        private void DisplayCountdownByNotification(object sender, EventArgs eeee)
+        {
+            using (var manager = (NotificationManager)Android.App.Application.Context.GetSystemService(Context.NotificationService))
+            {
+                for (byte i = 3; i > 0; --i)
+                {
+                    if (!Exists) { return; } //because what if you kill the service within the 3 seconds given for this method? ;)
+
+                    manager.Notify(2, UxImplementation.GetCountdownNotification(this, i));
+                    Thread.Sleep(1000);
+                }
+                if(this.IsForegroundCurrently)
+                {
+                    manager.Notify(2, UxImplementation.GetNotificationForWaiting(this));
+                }
+                else {
+                    manager.Cancel(2);
+                }
+            }
+        }
+
         public override void OnDestroy()
         {
             ClearAlarms();
+            BroadcastWasReceived -= DisplayCountdownByNotification;
             Exists = false;
             base.OnDestroy();
         }

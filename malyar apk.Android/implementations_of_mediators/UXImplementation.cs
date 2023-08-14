@@ -10,21 +10,20 @@ using System.Text;
 using System;
 using malyar_apk.Shared;
 using Android.Content.PM;
-using System.Collections;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Android.Graphics;
 
 [assembly: Dependency(typeof(malyar_apk.Droid.UxImplementation))]
 namespace malyar_apk.Droid
 {
     class UxImplementation : ContextDependentObject, IUXMediator
     {
-        public async void DenoteSuccesfulSave(float[] percentages)
+        private static bool save_notif_channel_exists = false;
+        public void DenoteSuccesfulSave(float[] percentages)
         {
             var remote_view = new RemoteViews(Xamarin.Essentials.AppInfo.PackageName, Resource.Layout.CustomSaveNotification);
             remote_view.SetTextViewText(Resource.Id.notif_headline, $"Сохранено обоев: {percentages.Length} шт");
             remote_view.SetInt(Resource.Id.gradient_container, "setBackgroundResource", (Build.VERSION.SdkInt >= BuildVersionCodes.N) ? Resource.Drawable.sky_gradient_24_andabove : Resource.Drawable.sky_gradient);
-            remote_view.SetTextViewText(Resource.Id.time_here, DateTime.Now.ToString(Constants.TimeFormat));
+            remote_view.SetTextViewText(Resource.Id.time_here, DateTime.Now.ToString("HH:mm"));
 
             var activity_name_source = BaseContext.PackageManager.GetActivityInfo(BaseContext.ComponentName, PackageInfoFlags.Activities);
             remote_view.SetTextViewText(Resource.Id.appname_here, activity_name_source.NonLocalizedLabel);
@@ -50,46 +49,26 @@ namespace malyar_apk.Droid
             NotificationCompat.Builder builder;
             using (var manager = (NotificationManager)BaseContext.GetSystemService(Context.NotificationService))
             {
-                if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+                if (Build.VERSION.SdkInt >= BuildVersionCodes.O)//api level 26+
                 {
-                    string CHANNELLID = "saves_here";
-
-                    NotificationChannel channel = new NotificationChannel(CHANNELLID, CHANNELLID, NotificationImportance.High);
-                    manager.CreateNotificationChannel(channel);
-
-                    builder = new NotificationCompat.Builder(BaseContext, CHANNELLID);
+                    if (!save_notif_channel_exists)
+                    {
+                        NotificationChannel channel = new NotificationChannel(AndroidConstants.SCHEDULE_SAVED_NOTIF_CHANNEL,
+                                                                                AndroidConstants.SCHEDULE_SAVED_NOTIF_CHANNEL, NotificationImportance.High);
+                        manager.CreateNotificationChannel(channel);
+                        save_notif_channel_exists = true;
+                    } 
+                    builder = new NotificationCompat.Builder(BaseContext, AndroidConstants.SCHEDULE_SAVED_NOTIF_CHANNEL);
                 }
-                else {
-                    builder = new NotificationCompat.Builder(BaseContext);
+                else { //api level 25-
+                    builder = new NotificationCompat.Builder(BaseContext).SetPriority(1);//Priority High
                 }
-
                 builder = builder.SetContent(remote_view).SetSmallIcon(Resource.Drawable.save_small_icon);
 
                 manager.Notify(1, builder.Build());
-
-                await Task.Delay(2000);
-                if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
-                {
-                    manager.DeleteNotificationChannel("saves_here");
-                }
-
                 builder.Dispose();
             }
         }
-
-        /*public bool BackgroundWorkAlreadyPrepared()
-        {
-            using (PackageManager pm = BaseContext.PackageManager) 
-            {
-               IList<ResolveInfo> infos = pm.QueryBroadcastReceivers(new Intent(Android.App.Application.Context, typeof(AlarmReceiver)).SetAction(AndroidConstants.WP_CHANGE_ALARM),
-                                            PackageInfoFlags.Receivers);
-                return infos.Count > 0;
-            }
-        }
-        public void InitializeBackgroundWork()
-        {
-            Android.App.Application.Context.RegisterReceiver(new AlarmReceiver(), new IntentFilter(AndroidConstants.WP_CHANGE_ALARM));
-        }*/
 
         public void DeliverToast(string text)
         {
@@ -115,25 +94,47 @@ namespace malyar_apk.Droid
             Toast.MakeText(BaseContext, description, ToastLength.Short).Show();          
         }
 
-        static internal Notification GetNotificationForWaiting(Context cntx)
+        static private NotificationCompat.Builder get_minimun_notif_builder(Context _cntx, string _channel_id)
         {
-            NotificationCompat.Builder builder;
-            using (var manager = (NotificationManager)cntx.GetSystemService(Context.NotificationService))
+            NotificationCompat.Builder _builder;
+            using (var manager = (NotificationManager)_cntx.GetSystemService(Context.NotificationService))
             {
-                if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+                if (Build.VERSION.SdkInt >= BuildVersionCodes.O) //api level 26+
                 {
-                    NotificationChannel channel = new NotificationChannel(AndroidConstants.WP_CHANGE_NOTIF_CHANNEL,
-                                                                            AndroidConstants.WP_CHANGE_NOTIF_CHANNEL,
-                                                                            NotificationImportance.Low);
+                    NotificationChannel channel = new NotificationChannel(_channel_id, _channel_id, NotificationImportance.Low);
                     manager.CreateNotificationChannel(channel);
 
-                    builder = new NotificationCompat.Builder(cntx, AndroidConstants.WP_CHANGE_NOTIF_CHANNEL);
+                    _builder = new NotificationCompat.Builder(_cntx, _channel_id);
                 }
-                else {
-                    builder = new NotificationCompat.Builder(cntx);
+                else
+                { //api level 25-
+                    _builder = new NotificationCompat.Builder(_cntx).SetPriority(-1); //Priority Low
                 }
             }
-            Notification result = builder.SetSmallIcon(Resource.Drawable.notification_paint_roller).SetContentTitle("ждём смены обоев").Build();
+            return _builder;
+        }
+
+        static internal Notification GetNotificationForWaiting(Context cntx)
+        {
+            NotificationCompat.Builder builder = get_minimun_notif_builder(cntx, AndroidConstants.WP_CHANGE_NOTIF_CHANNEL);
+
+            Notification result = builder.SetSmallIcon(Resource.Drawable.notification_paint_roller)
+                                            .SetContentTitle("ждём следующей смены обоев")
+                                            .SetStyle(new NotificationCompat.BigTextStyle().BigText("Без этого уведомления не будет работать служба ожидания нужного времени, когда менять обои. Не отключайте этому приложению уведомления."))
+                                            .Build();
+            
+            builder.Dispose();
+            return result;
+        }
+
+        static internal Notification GetCountdownNotification(Context cntx, byte sec_left) 
+        {
+            NotificationCompat.Builder builder = get_minimun_notif_builder(cntx, AndroidConstants.WP_CHANGE_NOTIF_CHANNEL);
+
+            Notification result = builder.SetSmallIcon(Resource.Drawable.notification_paint_roller)
+                                            .SetContentTitle($"Обои сменятся через {sec_left}...")
+                                            .SetLargeIcon(BitmapFactory.DecodeResource(cntx.Resources, Resource.Drawable.notification_paint_roller))
+                                            .Build();
             builder.Dispose();
             return result;
         }

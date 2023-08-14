@@ -31,8 +31,11 @@
 *.out
 *.app
 
-DraggableSeparatorRenderer.cs
+*.csproj
+*csproj.user
+*.ini
 
 bin/
 obj/
 .vs/
+

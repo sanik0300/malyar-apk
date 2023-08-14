@@ -15,6 +15,7 @@ namespace malyar_apk.Droid
                               WP_CHANGE_ALARM = "NEW_WP_TIME",
                               TPM_START_EXTRA_KEY = "TPM_START",
                               REQUEST_CODE_EXTRA_KEY = "REQUESTCODE",
+                              SCHEDULE_SAVED_NOTIF_CHANNEL = "saves_here",
                               WP_CHANGE_NOTIF_CHANNEL = "wp_change";
     }
 }

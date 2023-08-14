@@ -46,8 +46,8 @@ namespace malyar_apk.Shared
                 IOM.BeginLoadingSchedule();
                 result = true;
             }
-            else {
-                _schedule[0] = TimedPictureModel.OriginalForTheWholeDay();
+            else {              
+                _schedule.Add(TimedPictureModel.OriginalForTheWholeDay());
                 OnNeedToVisualiseSchedule(AimOfReVisualise.LoadedFail);
             }
             result = false;

@@ -79,6 +79,7 @@ namespace malyar_apk.Droid
 
         public void OnFilePathDelivered(string filePath)
         {
+            if(this.FilePathDelivered == null) { return; }
             FilePathDelivered.Invoke(this, new ValuePassedEventArgs<string>(filePath));
         }
 

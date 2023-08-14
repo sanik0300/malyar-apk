@@ -15,7 +15,9 @@ namespace malyar_apk.Droid
     //don't confuse this with context_bound_object ;)
     internal abstract class ContextDependentObject
     {
-        static internal MainActivity BaseContext;
+        static internal void InitializeWithContext(MainActivity context) { BaseContext = context; }
+        static internal void clean_references() { BaseContext = null; }
+        static protected MainActivity BaseContext;
 
         static internal TPModelParcelable[] IlistToParcelables(IList<TimedPictureModel> collection)
         {

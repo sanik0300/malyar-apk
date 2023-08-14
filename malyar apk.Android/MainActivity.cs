@@ -8,6 +8,12 @@ using Xamarin.Forms;
 using malyar_apk.Shared;
 using Android.Provider;
 using Android.Database;
+using Android.Net;
+using System.IO;
+using Java.IO;
+using System.Threading.Tasks;
+using System.Threading;
+//using System;
 
 namespace malyar_apk.Droid
 {
@@ -23,7 +29,7 @@ namespace malyar_apk.Droid
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
-            ContextDependentObject.BaseContext = this;
+            ContextDependentObject.InitializeWithContext(this);
 
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
@@ -43,7 +49,7 @@ namespace malyar_apk.Droid
 
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
         }
- 
+
         public void StartIO(string filepath, bool save, IList<TimedPictureModel> models = null)
         {
             PendingIntent pi = this.CreatePendingResult(save ? AndroidConstants.TaskCode_Save : AndroidConstants.TaskCode_Load, new Intent(), 0);
@@ -61,15 +67,16 @@ namespace malyar_apk.Droid
             {
                 this.StartService(intent);
             }
-            else
-            {
+            else {
                 idleness_receiver = new IdlenessEndReceiver(intent);
                 IntentFilter filter = new IntentFilter(PowerManager.ActionDeviceIdleModeChanged);
                 filter.AddAction(Intent.ActionScreenOn);
                 filter.AddAction(AndroidConstants.START_IO_LOCAL_ACTION);
                 RegisterReceiver(idleness_receiver, filter);
-            }     
+            }
+            PM.Dispose();
         }
+
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
@@ -80,28 +87,89 @@ namespace malyar_apk.Droid
                 idleness_receiver = null;
             }
             
-            var iom = DependencyService.Get<IOMediator>() as IO_Implementation; //so far i haven't found another way to get global instance of UxImplementation
+            var iom = DependencyService.Get<IOMediator>() as IO_Implementation;
             switch (requestCode)
             {
                 case AndroidConstants.FILEPICKER_RESULT_REQ_CODE:
-                    
-                    if(resultCode != Result.Ok) { return; }                  
 
-                    string path_to_output,
-                           doc_id_substring = data.Data.Path.Split(':')[1],
-                           ssselection = MediaStore.Images.Media.InterfaceConsts.Id + " =? ";
+                    if (resultCode != Result.Ok) { return; }
 
-                    using(ICursor cursor = ContentResolver.Query(MediaStore.Images.Media.ExternalContentUri, 
-                                                                null, ssselection, 
-                                                                new string[] { doc_id_substring }, null)) 
-                    { 
-                        int columnIndex = cursor.GetColumnIndexOrThrow(MediaStore.Images.Media.InterfaceConsts.Data);
-                        cursor.MoveToFirst();
-                        path_to_output = cursor.GetString(columnIndex);
-                        
-                        cursor.Close();
+                    if (data.Data.Host == "com.google.android.apps.docs.storage") //if taking file from google drive
+                    {
+                        string path_to_dir = this.GetExternalFilesDir(null).AbsolutePath + "/from_drive/";
+
+                        if (!Directory.Exists(path_to_dir)) { Directory.CreateDirectory(path_to_dir); }
+
+                        string path_of_saved_img = path_to_dir + data.Data.LastPathSegment;
+
+                        if (!System.IO.File.Exists(path_of_saved_img))
+                        {
+                            try {
+                                using (Stream uri_str = ContentResolver.OpenInputStream(data.Data))
+                                {
+                                    using (FileStream fs = new FileStream(path_of_saved_img, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read))
+                                    {
+                                        uri_str.CopyTo(fs);
+                                    }
+                                }
+                            }
+                            catch (Java.IO.FileNotFoundException)
+                            {
+                                ErrorDialogFragment edf = new ErrorDialogFragment(this);
+                                edf.Show(this.FragmentManager, edf.Tag);
+
+                                return;
+                            }
+                        }
+                        iom.OnFilePathDelivered(path_of_saved_img);
                     }
-                    iom.OnFilePathDelivered(path_to_output);
+                    else { //not checking host anymore because host names for gallery, explorer and so on depend on wrapper name
+
+                        switch (data.Data.Path.Substring(1, 3))
+                        {
+                            case "raw": //if taking img file from gallery
+                                iom.OnFilePathDelivered(data.Data.Path.Substring(5));
+                                break;
+                            case "ext": //from file explorer
+                                iom.OnFilePathDelivered(data.Data.Path.Replace("external_files", "storage/emulated/0"));
+                                break;
+                            case "doc":
+                                string path_to_output;
+
+                                if (data.Data.Path.Contains("/pr"))//URI is like /document/primary:some_dir/some_file
+                                {
+                                    using (ICursor cursor = ContentResolver.Query(data.Data,
+                                                                                    new string[1] { MediaStore.IMediaColumns.DocumentId },
+                                                                                    null, null, null))
+                                    {
+                                        cursor.MoveToFirst();
+                                        path_to_output = cursor.GetString(0).Replace("primary:", "/storage/emulated/0/");
+
+                                        cursor.Close();
+                                    }
+                                }
+                                else { //URI is like /document:12345678
+                                    string doc_id_substring = data.Data.Path.Split(':')[1],
+                                                              ssselection = MediaStore.Images.Media.InterfaceConsts.Id + " =? ";
+
+                                    using (ICursor cursor = ContentResolver.Query(MediaStore.Images.Media.ExternalContentUri,
+                                                                                null, ssselection,
+                                                                                new string[] { doc_id_substring }, null))
+                                    {
+                                        int columnIndex = cursor.GetColumnIndexOrThrow(MediaStore.Images.Media.InterfaceConsts.Data);
+                                        cursor.MoveToFirst();
+                                        path_to_output = cursor.GetString(columnIndex);
+
+                                        cursor.Close();
+                                    }
+                                }
+                                iom.OnFilePathDelivered(path_to_output);
+                                break;
+                            default:
+                                iom.OnFilePathDelivered(data.Data.Path); // no SAF
+                                break;
+                        }                    
+                    }
                     break;
 
                 case AndroidConstants.TaskCode_Load:
@@ -159,7 +227,7 @@ namespace malyar_apk.Droid
         {
             if(WPCNN.IsConnected) { this.UnbindService(WPCNN); }
 
-            ContextDependentObject.BaseContext = null;
+            ContextDependentObject.clean_references();
             base.OnDestroy();
         }
     }
