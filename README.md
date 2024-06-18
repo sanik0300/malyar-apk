@@ -1,4 +1,4 @@
 In this commit:
-✅implemented the handling of various ways of picking image files
-✅added new notification for the moment of WP change, and improved existing ones
-✅fixed a crash during the first app launch after installation
+✅changed target android api level to 33
+✅added support for android api level 30+ photo picker
+✅fixed broadcast receiver compatibility with new target android version

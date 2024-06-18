@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" android:versionCode="1" android:versionName="0.9a" package="com.sanikshomemade.malyar_apk" android:installLocation="auto">
-	<uses-sdk android:minSdkVersion="16" android:targetSdkVersion="30" />
+	<uses-sdk android:minSdkVersion="17" android:targetSdkVersion="33" />
 	<application android:label="malyar_apk.Android" android:theme="@style/MainTheme">
-		<receiver android:enabled="true" android:exported="false"  android:name=".WPChangeEventReceiver">
+		<receiver android:enabled="true" android:exported="false" android:name=".WPChangeEventReceiver">
 			<intent-filter>
 				<action android:name="NEW_WP_TIME"></action>
 			</intent-filter>

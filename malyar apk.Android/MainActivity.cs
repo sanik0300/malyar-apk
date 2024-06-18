@@ -13,6 +13,7 @@ using System.IO;
 using Java.IO;
 using System.Threading.Tasks;
 using System.Threading;
+using Android.Text;
 //using System;
 
 namespace malyar_apk.Droid
@@ -75,6 +76,25 @@ namespace malyar_apk.Droid
                 RegisterReceiver(idleness_receiver, filter);
             }
             PM.Dispose();
+        }
+
+        private string GetImagePathWithMediaCursor(string documentId)
+        {
+            string selection = MediaStore.Images.Media.InterfaceConsts.Id + " =? ";
+            string result;
+
+            using (ICursor cursor = ContentResolver.Query(MediaStore.Images.Media.ExternalContentUri,
+                                                        null, selection,
+                                                        new string[] { documentId }, null))
+            {
+                int columnIndex = cursor.GetColumnIndexOrThrow(MediaStore.Images.Media.InterfaceConsts.Data);
+                cursor.MoveToFirst();
+                result = cursor.GetString(columnIndex);
+
+                cursor.Close();
+            }
+
+            return result;
         }
 
 
@@ -149,21 +169,13 @@ namespace malyar_apk.Droid
                                     }
                                 }
                                 else { //URI is like /document:12345678
-                                    string doc_id_substring = data.Data.Path.Split(':')[1],
-                                                              ssselection = MediaStore.Images.Media.InterfaceConsts.Id + " =? ";
-
-                                    using (ICursor cursor = ContentResolver.Query(MediaStore.Images.Media.ExternalContentUri,
-                                                                                null, ssselection,
-                                                                                new string[] { doc_id_substring }, null))
-                                    {
-                                        int columnIndex = cursor.GetColumnIndexOrThrow(MediaStore.Images.Media.InterfaceConsts.Data);
-                                        cursor.MoveToFirst();
-                                        path_to_output = cursor.GetString(columnIndex);
-
-                                        cursor.Close();
-                                    }
+                                    path_to_output = GetImagePathWithMediaCursor(data.Data.Path.Split(':')[1]);
                                 }
                                 iom.OnFilePathDelivered(path_to_output);
+                                break;
+                            case "pic": //image picker from android 30+, uri ends with a big number like in the previous case
+                                int last_slash_index = data.Data.Path.LastIndexOf('/');
+                                iom.OnFilePathDelivered(GetImagePathWithMediaCursor(data.Data.Path.Substring(last_slash_index + 1)));
                                 break;
                             default:
                                 iom.OnFilePathDelivered(data.Data.Path); // no SAF
@@ -189,6 +201,9 @@ namespace malyar_apk.Droid
                     break;
             }
         }
+
+
+
 
         protected override void OnPause()
         {

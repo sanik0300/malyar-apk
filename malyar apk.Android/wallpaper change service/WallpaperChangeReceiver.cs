@@ -8,7 +8,7 @@ using Xamarin.Essentials;
 
 namespace malyar_apk.Droid
 {
-    [BroadcastReceiver(Enabled = true)]
+    [BroadcastReceiver(Enabled = true, Exported = false)]
     [IntentFilter(new string[] { AndroidConstants.WP_CHANGE_ALARM })]
     internal class WPChangeEventReceiver : BroadcastReceiver
     {
