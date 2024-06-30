@@ -38,4 +38,8 @@
 bin/
 obj/
 .vs/
-
+"malyar apk/images/"
+"malyar apk.Android/Assets"
+"malyar apk.Android/Resources"
+!"malyar apk.Android/Resources/layout/"
+"malyar apk.Android/Properties/AssemblyInfo.cs"

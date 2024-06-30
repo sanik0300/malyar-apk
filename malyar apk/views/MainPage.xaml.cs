@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using malyar_apk.Shared;
 using System.Linq;
-using Xamarin.Essentials;
 using Xamarin.Forms;
 
 namespace malyar_apk
@@ -189,8 +186,15 @@ namespace malyar_apk
         private string filepath_on_the_way = null;
         private void preview_Tapped(object sender, EventArgs e)
         {
-            memdiator.AskForFileInPicker();
-            memdiator.FilePathDelivered += OnFilePathDelivered;
+            IPermitMediator permit = DependencyService.Get<IPermitMediator>();
+            if(permit.IsPermitted(InvolvedPermissions.StorageRead))
+            {
+                memdiator.AskForFileInPicker();
+                memdiator.FilePathDelivered += OnFilePathDelivered;
+            } 
+            else {
+                permit.AskPermission(InvolvedPermissions.StorageRead);
+            }       
         }
         private void OnFilePathDelivered(object sender, ValuePassedEventArgs<string> e)
         {
@@ -237,8 +241,15 @@ namespace malyar_apk
 
         private void save_Clicked(object sender, EventArgs e)
         {
-            TimedPicturesLoader.TryToSaveExistingOnes();
-            save.IsEnabled = false;
+            IPermitMediator permit = DependencyService.Get<IPermitMediator>();
+            if (permit.IsPermitted(InvolvedPermissions.ExactAlarm))
+            {
+                TimedPicturesLoader.TryToSaveExistingOnes();
+                save.IsEnabled = false;
+            }
+            else {
+                permit.AskPermission(InvolvedPermissions.ExactAlarm);
+            }
         }
 
         private async void to_settings_Clicked(object sender, EventArgs e)

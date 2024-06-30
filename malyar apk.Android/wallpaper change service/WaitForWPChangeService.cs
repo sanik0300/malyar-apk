@@ -1,15 +1,18 @@
 ﻿using Android.App;
 using Android.Content;
+using Android.Provider;
 using Android.Content.PM;
 using Android.OS;
 using Android.Runtime;
 using malyar_apk.Shared;
 using System;
+using System.IO;
 using System.Threading;
+using System.Diagnostics;
 
 namespace malyar_apk.Droid
 {
-    [Service]
+    [Service(Name = "com.sanikshomemade.malyar_apk.WaitForWPChangeService")]
     internal class WaitForWPChangeService : Service
     {
         public static bool Exists { get; private set; }
@@ -24,14 +27,21 @@ namespace malyar_apk.Droid
         {
             Exists = true;
             BroadcastWasReceived += this.DisplayCountdownByNotification;
-
+            
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.Kitkat)
+            {
+                BroadcastWasReceived += AlarmNextDayOnEvent;
+            }     
             IParcelable[] tpm_parcelables = intent.GetParcelableArrayExtra(AndroidConstants.LIST_KEY);
 
-            AssignAlarms(tpm_parcelables);
+            try {
+                AssignAlarms(tpm_parcelables);
+            }
+            catch(Exception ex) { }
 
-            return base.OnStartCommand(intent, flags, startId);
+            return StartCommandResult.RedeliverIntent;
         }
-        
+
         public new void StopForeground(bool remove)
         {
             base.StopForeground(remove);
@@ -45,11 +55,33 @@ namespace malyar_apk.Droid
 
 
         private static event EventHandler BroadcastWasReceived;
-        internal static void OnBroadcastWasReceived(BroadcastReceiver from_what)
+        internal static void OnBroadcastWasReceived(Intent receivedIntent)
         {
-            BroadcastWasReceived.Invoke(from_what, EventArgs.Empty);
+            BroadcastWasReceived.Invoke(receivedIntent, EventArgs.Empty);
         }
-        
+
+        //set alarm with the same pending intent to time exactly in a day from now,
+        //since the contained Set methods wont make a repeated alarm
+        private void AlarmNextDayOnEvent(object sender, EventArgs e)
+        {
+            long millisNextDay = Java.Lang.JavaSystem.CurrentTimeMillis() + 86400000; //thats how many milliseconds in a day
+                                                                                      //subtract seconds and millis to avoid increasing offset in time with everyday usage
+            Intent intentJustUsedInReceiver = sender as Intent;
+            PendingIntent pintent = PendingIntent.GetBroadcast(this,
+                                                                intentJustUsedInReceiver.GetIntExtra(AndroidConstants.REQUEST_CODE_EXTRA_KEY, 0),
+                                                                intentJustUsedInReceiver,
+                                                                (int)Build.VERSION.SdkInt >= 31 ? PendingIntentFlags.Immutable : PendingIntentFlags.UpdateCurrent);
+            AssignSingleAlarm(ref millisNextDay, (AlarmManager)this.GetSystemService(AlarmService), pintent);
+        }
+        private void AssignSingleAlarm(ref long millis, AlarmManager mngrInst, PendingIntent pi)
+        {
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.M)//api level 23
+            {
+                mngrInst.SetExactAndAllowWhileIdle(AlarmType.Rtc, millis, pi);
+                return;
+            }
+            mngrInst.SetExact(AlarmType.Rtc, millis, pi);   
+        }
 
         internal void AssignAlarms(IParcelable[] sources)
         {
@@ -63,24 +95,25 @@ namespace malyar_apk.Droid
 
                     Intent to_receiver = new Intent(this, typeof(WPChangeEventReceiver)).SetAction(AndroidConstants.WP_CHANGE_ALARM)
                                                 .PutExtra(AndroidConstants.FILEPATH_EXTRA_KEY, current_tpm.path_to_wallpaper)
-                                                .PutExtra(Intent.ExtraIndex, i)
                                                 .PutExtra(AndroidConstants.TPM_START_EXTRA_KEY, (int)current_tpm.StartTime.TotalMinutes);
-
+                  
                     if (Build.VERSION.SdkInt >= BuildVersionCodes.Kitkat) //api level 19
                     {
                         to_receiver.PutExtra(AndroidConstants.REQUEST_CODE_EXTRA_KEY, i);
                     }
-                    PendingIntent pintent = PendingIntent.GetBroadcast(this, i, to_receiver, PendingIntentFlags.UpdateCurrent);
+                    PendingIntent pintent = PendingIntent.GetBroadcast(this, i, to_receiver, (int)Build.VERSION.SdkInt >= 31? PendingIntentFlags.Immutable : PendingIntentFlags.UpdateCurrent);
 
-                    long current_miliseconds = Java.Lang.JavaSystem.CurrentTimeMillis() + (long)(current_tpm.StartTime.TotalMilliseconds - DateTime.Now.TimeOfDay.TotalMilliseconds);
-
-                    if (Build.VERSION.SdkInt >= BuildVersionCodes.M)//api level 23
+                    DateTime now = DateTime.Now;     
+                    long current_miliseconds = Java.Lang.JavaSystem.CurrentTimeMillis() + (long)(current_tpm.StartTime.TotalMilliseconds - now.TimeOfDay.TotalMilliseconds);
+                    
+                    if(current_tpm.StartTime.TotalMinutes < now.TimeOfDay.TotalMinutes) //if current wallpaper change time is earlier than current time (round to mins)
                     {
-                        do_alyarmu.SetExactAndAllowWhileIdle(AlarmType.Rtc, current_miliseconds, pintent);
+                        current_miliseconds += 86400000; //add a whole day in milliseconds
                     }
-                    else if (Build.VERSION.SdkInt >= BuildVersionCodes.Kitkat) //api level 19
+
+                    if (Build.VERSION.SdkInt >= BuildVersionCodes.Kitkat) //api level 19
                     {
-                        do_alyarmu.SetExact(AlarmType.Rtc, current_miliseconds, pintent);
+                        AssignSingleAlarm(ref current_miliseconds, do_alyarmu, pintent);
                     }
                     else {
                         do_alyarmu.SetRepeating(AlarmType.Rtc, current_miliseconds, AlarmManager.IntervalDay, pintent);
@@ -95,7 +128,7 @@ namespace malyar_apk.Droid
             {
                 for (int i = 0; i < alarms_count; ++i)
                 {
-                    PendingIntent p_i = PendingIntent.GetBroadcast(this, i, new Intent(this, typeof(WPChangeEventReceiver)).SetAction(AndroidConstants.WP_CHANGE_ALARM), PendingIntentFlags.UpdateCurrent);
+                    PendingIntent p_i = PendingIntent.GetBroadcast(this, i, new Intent(this, typeof(WPChangeEventReceiver)).SetAction(AndroidConstants.WP_CHANGE_ALARM), (int)Build.VERSION.SdkInt >= 31 ? PendingIntentFlags.Immutable : PendingIntentFlags.UpdateCurrent);
                     if (p_i != null)
                     {
                         do_alyarmu.Cancel(p_i);
@@ -129,8 +162,12 @@ namespace malyar_apk.Droid
         public override void OnDestroy()
         {
             ClearAlarms();
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.Kitkat)
+            {
+                BroadcastWasReceived -= AlarmNextDayOnEvent;
+            }
             BroadcastWasReceived -= DisplayCountdownByNotification;
-            Exists = false;
+            Exists = false;            
             base.OnDestroy();
         }
     }

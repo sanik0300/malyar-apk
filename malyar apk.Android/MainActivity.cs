@@ -8,22 +8,16 @@ using Xamarin.Forms;
 using malyar_apk.Shared;
 using Android.Provider;
 using Android.Database;
-using Android.Net;
 using System.IO;
-using Java.IO;
-using System.Threading.Tasks;
-using System.Threading;
-using Android.Text;
-//using System;
 
 namespace malyar_apk.Droid
 {
-
     [Activity(Name = "com.sanikshomemade.malyar_apk.MainActivity", LaunchMode = LaunchMode.SingleTask, Label = "malyar_apk", Icon = "@mipmap/icon", Theme = "@style/MainTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize)]
     public class MainActivity : global::Xamarin.Forms.Platform.Android.FormsAppCompatActivity
     {
         private IdlenessEndReceiver idleness_receiver;
         public bool InForeground { get; private set; }
+        private bool StorageReadAllowed;
 
         internal WPServiceConnection WPCNN = new WPServiceConnection();
 
@@ -31,23 +25,23 @@ namespace malyar_apk.Droid
         {
             base.OnCreate(savedInstanceState);
             ContextDependentObject.InitializeWithContext(this);
-
+            
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
-            LoadApplication(new App());   
+            LoadApplication(new App());
+            StorageReadAllowed = DependencyService.Get<IPermitMediator>().IsPermitted(InvolvedPermissions.StorageRead);
 
-            if(!App.IsRunning) { return; }
-            TimedPicturesLoader.OnNeedToVisualiseSchedule(AimOfReVisualise.JustUpdate);
-            (DependencyService.Get<IOMediator>() as IO_Implementation).OnUpdateWhichFilesExist();
-            
             if (!WaitForWPChangeService.Exists) { return; }
             this.BindService(new Intent(Android.App.Application.Context, typeof(WaitForWPChangeService)), WPCNN, Bind.AutoCreate);
+
+            IOMediator iomem = DependencyService.Get<IOMediator>();
+            if (!iomem.WasInitialized || !WaitForWPChangeService.Exists) { return; }
+            iomem.BeginLoadingSchedule();
         }
 
-        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
+        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Permission[] grantResults)
         {
             Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
-
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
         }
 
@@ -203,8 +197,6 @@ namespace malyar_apk.Droid
         }
 
 
-
-
         protected override void OnPause()
         {
             base.OnPause();
@@ -214,6 +206,14 @@ namespace malyar_apk.Droid
         protected override void OnResume()
         {    
             base.OnResume();
+            if(!StorageReadAllowed)
+            {
+                IPermitMediator permit = DependencyService.Get<IPermitMediator>();
+                if(!permit.IsPermitted(InvolvedPermissions.StorageRead)) { return; }
+
+                permit.OnFilesReadUnblocked();
+                StorageReadAllowed = true;
+            }
             InForeground = true;
             if (idleness_receiver == null)
                 return;
@@ -242,7 +242,7 @@ namespace malyar_apk.Droid
         {
             if(WPCNN.IsConnected) { this.UnbindService(WPCNN); }
 
-            ContextDependentObject.clean_references();
+            //ContextDependentObject.clean_references();
             base.OnDestroy();
         }
     }

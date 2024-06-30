@@ -219,9 +219,17 @@ namespace malyar_apk
             mediator.DeliverToast("Жмите 2 раза, чтобы поменять картинку"); 
         }
 
-        private async void source_img_really_Tapped(object sender, EventArgs e) 
+        private void source_img_really_Tapped(object sender, EventArgs e) 
         {
-            iomdtr.AskForFileInPicker(this.actual_schedule_part);
+            IPermitMediator permit = DependencyService.Get<IPermitMediator>();
+            if (permit.IsPermitted(InvolvedPermissions.StorageRead))
+            {
+                iomdtr.AskForFileInPicker(this.actual_schedule_part);
+            }
+            else
+            {
+                permit.AskPermission(InvolvedPermissions.StorageRead);
+            }
         }
 
         private byte ClicksCount = 0;

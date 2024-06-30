@@ -19,7 +19,7 @@ namespace malyar_apk.Droid
                 return;
             }
 
-            WaitForWPChangeService.OnBroadcastWasReceived(this);
+            WaitForWPChangeService.OnBroadcastWasReceived(intent);
 
             string filepath_to_img = intent.GetStringExtra(AndroidConstants.FILEPATH_EXTRA_KEY);
 

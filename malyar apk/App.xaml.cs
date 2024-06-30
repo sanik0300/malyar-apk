@@ -12,6 +12,17 @@ namespace malyar_apk
     {
         public App()
         {
+            DependencyService.Get<IPermitMediator>().FilesReadUnblocked += (s, a) =>
+            {
+                IOMediator iom = DependencyService.Get<IOMediator>();
+                if (!File.Exists(iom.PathToOriginalWP))
+                {
+                    iom.RememberOriginalWP();
+                }
+                MessagingCenter.Send(iom, Constants.UpdateImg);
+                SchedulePiece.worth_asking_for_file = true;
+            };
+
             InitializeComponent();
 
             if(Device.RuntimePlatform == Device.Android) {
@@ -26,26 +37,17 @@ namespace malyar_apk
         {
             base.OnStart();
 
-            if (await Permissions.CheckStatusAsync<Permissions.StorageRead>() != PermissionStatus.Granted)
+            IPermitMediator permit = DependencyService.Get<IPermitMediator>();
+            if(!permit.IsPermitted(InvolvedPermissions.StorageRead))
             {
                 SchedulePiece.worth_asking_for_file = false;
-                await Permissions.RequestAsync<Permissions.StorageRead>();
-                var status2 = await Permissions.CheckStatusAsync<Permissions.StorageRead>();
-                IOMediator io_thing = DependencyService.Get<IOMediator>();
-                if (status2 == PermissionStatus.Granted)
-                {
-                    if (!File.Exists(io_thing.PathToOriginalWP))
-                    {
-                        io_thing.RememberOriginalWP();
-                    }
-                    MessagingCenter.Send(io_thing, Constants.UpdateImg);
-                    SchedulePiece.worth_asking_for_file = true;
-                }
+                permit.AskPermission(InvolvedPermissions.StorageRead);
             }
-            
-            if(await Permissions.CheckStatusAsync<Permissions.StorageWrite>() != PermissionStatus.Granted)
-            {
-                await Permissions.RequestAsync<Permissions.StorageWrite>();
+            if(!permit.IsPermitted(InvolvedPermissions.StorageWrite)) {
+                permit.AskPermission(InvolvedPermissions.StorageWrite);
+            }
+            if(!permit.IsPermitted(InvolvedPermissions.ExactAlarm)) {
+                permit.AskPermission(InvolvedPermissions.ExactAlarm);
             }
             IsRunning = true;
         }

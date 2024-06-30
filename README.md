@@ -1,4 +1,5 @@
 In this commit:
-✅changed target android api level to 33
-✅added support for android api level 30+ photo picker
-✅fixed broadcast receiver compatibility with new target android version
+✅fixed the repeating alarms on the next day after planning and so on
+✅fixed the planning of wallpaper changes for a time earlier than the assignment moment
+✅fixed the compatibility with android 13+ storage permissions
+✅added prevention from using not permitted actions in ui
