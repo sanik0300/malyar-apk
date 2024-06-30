@@ -8,60 +8,48 @@ using System.Threading.Tasks;
 
 namespace malyar_apk
 {
-    
     public partial class App : Application
     {
         public App()
         {
+            DependencyService.Get<IPermitMediator>().FilesReadUnblocked += (s, a) =>
+            {
+                IOMediator iom = DependencyService.Get<IOMediator>();
+                if (!File.Exists(iom.PathToOriginalWP))
+                {
+                    iom.RememberOriginalWP();
+                }
+                MessagingCenter.Send(iom, Constants.UpdateImg);
+                SchedulePiece.worth_asking_for_file = true;
+            };
+
             InitializeComponent();
 
             if(Device.RuntimePlatform == Device.Android) {
-                MainPage = new OurResponsiveNavigationpage(new MainPage()) { BarBackgroundColor = Color.BlueViolet };
+                MainPage = new NavigationPage(new MainPage()) { BarBackgroundColor = Color.BlueViolet };
             }
             else { new MainPage(); }
         }
 
+        public static bool IsRunning { get; private set; }
+
         protected override async void OnStart()
         {
-            if (Preferences.Get(Constants.FIRST_LAUNCH_KEY, true))
-            {
-                IUXMediator ux_thing = DependencyService.Get<IUXMediator>();
-                if (!ux_thing.BackgroundWorkAlreadyPrepared())
-                {
-                    ux_thing.InitializeBackgroundWork();
-                }
-            }
+            base.OnStart();
 
-            if (await Permissions.CheckStatusAsync<Permissions.StorageRead>() != PermissionStatus.Granted)
+            IPermitMediator permit = DependencyService.Get<IPermitMediator>();
+            if(!permit.IsPermitted(InvolvedPermissions.StorageRead))
             {
                 SchedulePiece.worth_asking_for_file = false;
-                await Permissions.RequestAsync<Permissions.StorageRead>();
-                var status2 = await Permissions.CheckStatusAsync<Permissions.StorageRead>();
-                IOMediator io_thing = DependencyService.Get<IOMediator>();
-                if (status2 == PermissionStatus.Granted)
-                {
-                    if (!File.Exists(io_thing.PathToOriginalWP))
-                    {
-                        io_thing.RememberOriginalWP();
-                    }
-                    MessagingCenter.Send(io_thing, Constants.UpdateImg);
-                    SchedulePiece.worth_asking_for_file = true;
-                }
+                permit.AskPermission(InvolvedPermissions.StorageRead);
             }
-            
-            if(await Permissions.CheckStatusAsync<Permissions.StorageWrite>() != PermissionStatus.Granted)
-            {
-                await Permissions.RequestAsync<Permissions.StorageWrite>();
+            if(!permit.IsPermitted(InvolvedPermissions.StorageWrite)) {
+                permit.AskPermission(InvolvedPermissions.StorageWrite);
             }
-            Preferences.Set(Constants.FIRST_LAUNCH_KEY, false);
-        }
-        
-        protected override void OnSleep()
-        {
-        }
-
-        protected override void OnResume()
-        {
+            if(!permit.IsPermitted(InvolvedPermissions.ExactAlarm)) {
+                permit.AskPermission(InvolvedPermissions.ExactAlarm);
+            }
+            IsRunning = true;
         }
     }
 }

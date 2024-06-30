@@ -1,9 +1,11 @@
 ﻿using Android.App;
+using Android.Content;
 using Android.Graphics;
 using Android.Graphics.Drawables;
 using malyar_apk.Shared;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using Xamarin.Forms;
 
@@ -14,9 +16,10 @@ namespace malyar_apk.Droid
     {
         public bool WasInitialized { get; set; }
      
-        public string PathToSchedule { get { return path_to_schedule; } }
+        public string PathToSchedule { get { return fpath_to_schedule; } }
         
-        internal static  readonly string fpath_to_orig = ConvertFilenameToFilepath("original.png");
+        internal static readonly string fpath_to_orig = System.IO.Path.Combine(BaseContext.GetExternalFilesDir(null).AbsolutePath, "original.png");
+        internal static readonly string fpath_to_schedule = System.IO.Path.Combine(BaseContext.GetExternalFilesDir(null).AbsolutePath, "schedule");
         public string PathToOriginalWP { get { return fpath_to_orig; } }    
 
         public void RememberOriginalWP()
@@ -32,25 +35,26 @@ namespace malyar_apk.Droid
                     {
                         File.WriteAllBytes(fpath_to_orig, mem.ToArray());
                     }
+                    current_wp.Dispose();
+                    bmp.Dispose();
                 }
             }
         }
 
-        public event EventHandler<ScheduleAddedEventArgs> ScheduleLoaded;
+        public event EventHandler<ValuePassedEventArgs<List<TimedPictureModel>>> ScheduleLoaded;
         public event EventHandler ScheduleSaved;
-        public void OnScheduleAdded(List<TimedPictureModel> list/*, bool originals_present*/)
+        public void OnScheduleAdded(List<TimedPictureModel> list)
         {
-            ScheduleLoaded.Invoke(this, new ScheduleAddedEventArgs(list/*, originals_present*/));
-            //this.has_originals = originals_present;
+            ScheduleLoaded.Invoke(this, new ValuePassedEventArgs<List<TimedPictureModel>>(list));
         }
         public void BeginLoadingSchedule()
         {
-            BaseContext.StartIO(path_to_schedule, false);
+            BaseContext.StartIO(fpath_to_schedule, false);
         }
 
         public void SaveSchedule(List<TimedPictureModel> list)
         {
-            BaseContext.StartIO(path_to_schedule, true, list);
+            BaseContext.StartIO(fpath_to_schedule, true, list);
         }
 
         internal bool has_originals = true;
@@ -60,9 +64,29 @@ namespace malyar_apk.Droid
             ScheduleSaved.Invoke(this, EventArgs.Empty);
         }
 
-        internal static string ConvertFilenameToFilepath(string filename)
+        public void AskForFileInPicker(TimedPictureModel who_asked = null)
         {
-            return System.IO.Path.Combine(BaseContext.GetExternalFilesDir(null).AbsolutePath, filename);
+            Intent choose_file_perhaps = new Intent(Intent.ActionGetContent);
+            choose_file_perhaps.SetType("image/*");
+            choose_file_perhaps = Intent.CreateChooser(choose_file_perhaps, "ну выбирай штоли...");
+
+            BaseContext.StartActivityForResult(choose_file_perhaps, AndroidConstants.FILEPICKER_RESULT_REQ_CODE);
+            if (who_asked == null) { return;  }
+            this.FilePathDelivered += who_asked.OnNewWallpaperPathGotten;
+        }
+
+        public event EventHandler<ValuePassedEventArgs<string>> FilePathDelivered;
+
+        public void OnFilePathDelivered(string filePath)
+        {
+            if(this.FilePathDelivered == null) { return; }
+            FilePathDelivered.Invoke(this, new ValuePassedEventArgs<string>(filePath));
+        }
+
+        public event EventHandler UpdateWhichImagesExist;
+        public void OnUpdateWhichFilesExist()
+        {
+            UpdateWhichImagesExist.Invoke(this, EventArgs.Empty);
         }
     }
 }

@@ -1,5 +1,5 @@
-in this commit:
-✅ Fixed the crash in case of launching the app with horizontal orientation
-✅ Added a new button to set current wallpaper as a part of schedule
-✅ Fixed the possibility to add intervals ending at midnight
-✅ Fixed the display of situation of no file found
+In this commit:
+✅fixed the repeating alarms on the next day after planning and so on
+✅fixed the planning of wallpaper changes for a time earlier than the assignment moment
+✅fixed the compatibility with android 13+ storage permissions
+✅added prevention from using not permitted actions in ui

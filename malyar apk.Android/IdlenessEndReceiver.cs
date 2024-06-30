@@ -11,7 +11,7 @@ using System.Text;
 
 namespace malyar_apk.Droid
 {
-    [BroadcastReceiver(Enabled = true, Exported = true)]
+    [BroadcastReceiver(Enabled = true, Exported = false)]
     public class IdlenessEndReceiver : BroadcastReceiver
     {
         private readonly Intent PostponedIntent;
@@ -27,7 +27,6 @@ namespace malyar_apk.Droid
                 return;
             //because let's avoid that exception "not allowed to staer service"
             context.StartService(PostponedIntent);
-            
         }
     }
 }

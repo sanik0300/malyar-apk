@@ -17,7 +17,7 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AndroidUseLatestPlatformSdk>false</AndroidUseLatestPlatformSdk>
-    <TargetFrameworkVersion>v11.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v13.0</TargetFrameworkVersion>
     <AndroidEnableSGenConcurrent>true</AndroidEnableSGenConcurrent>
     <AndroidUseAapt2>true</AndroidUseAapt2>
     <AndroidHttpClientHandlerType>Xamarin.Android.Net.AndroidClientHandler</AndroidHttpClientHandlerType>
@@ -38,7 +38,7 @@
     <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
     <BundleAssemblies>false</BundleAssemblies>
     <MandroidI18n />
-    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+    <EmbedAssembliesIntoApk>false</EmbedAssembliesIntoApk>
     <AndroidLinkTool>r8</AndroidLinkTool>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -76,10 +76,10 @@
     <PackageReference Include="Xamarin.Essentials" Version="1.7.6" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AlarmReceiver.cs" />
     <Compile Include="AndroidConstants.cs" />
-    <Compile Include="implementations_of_mediators\ContextDependentObject.cs" />
+    <Compile Include="ErrorDialogFragment.cs" />
     <Compile Include="IdlenessEndReceiver.cs" />
+    <Compile Include="implementations_of_mediators\ContextDependentObject.cs" />
     <Compile Include="implementations_of_mediators\IO_Implementation.cs" />
     <Compile Include="IO_Service.cs" />
     <Compile Include="MainActivity.cs" />
@@ -87,9 +87,11 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="implementations_of_mediators\SchedulingImplementation.cs" />
     <Compile Include="implementations_of_mediators\UXImplementation.cs" />
+    <Compile Include="wallpaper change service\ServiceBindingTools.cs" />
     <Compile Include="TPModelParcelable.cs" />
     <Compile Include="TPModelParcelableCreator.cs" />
-    <Compile Include="WallpaperChangeService.cs" />
+    <Compile Include="wallpaper change service\WaitForWPChangeService.cs" />
+    <Compile Include="wallpaper change service\WallpaperChangeReceiver.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using malyar_apk.Shared;
-using Xamarin.Essentials;
 using Xamarin.Forms;
 
-namespace malyar_apk
+namespace malyar_apk.Shared
 {
-    static class TimedPicturesLoader
+    public enum AimOfReVisualise { LoadedOk, LoadedFail, JustUpdate };
+    static public class TimedPicturesLoader
     {
         private static List<TimedPictureModel> _schedule = new List<TimedPictureModel>(24 / (Constants.MinutesPerWallpaperByDefault / 60));
         internal static int prev_schedule_count { get; private set; }
@@ -19,7 +18,7 @@ namespace malyar_apk
                 DependencyService.Get<IUXMediator>().DenoteSuccesfulSave(GeneratePercentageMap()); 
             };
         }
-        static public float[] GeneratePercentageMap()
+        static private float[] GeneratePercentageMap()
         {
             float[] result = new float[_schedule.Count];
             for(int i =0; i< _schedule.Count; ++i)
@@ -32,17 +31,33 @@ namespace malyar_apk
         {
             IOMediator IOM = DependencyService.Get<IOMediator>();
             IOM.WasInitialized = true;
+            bool result;
 
-            if (File.Exists(IOM.PathToSchedule))
+            if (File.Exists(IOM.PathToSchedule) || File.Exists(IOM.PathToSchedule+".json"))
             {
-                IOM.ScheduleLoaded += (s, args) => {
-                    if(args.TPMs != null) { _schedule = args.TPMs; }
+                IOM.ScheduleLoaded += (s, args) => 
+                {
+                    if(args.value != null)  {
+                        _schedule = args.value; 
+                    }
+                    else { _schedule[0] = TimedPictureModel.OriginalForTheWholeDay(); }
+                    OnNeedToVisualiseSchedule(args.value != null? AimOfReVisualise.LoadedOk : AimOfReVisualise.LoadedFail);
                 };
                 IOM.BeginLoadingSchedule();
-                return true;
+                result = true;
             }
+            else {              
+                _schedule.Add(TimedPictureModel.OriginalForTheWholeDay());
+                OnNeedToVisualiseSchedule(AimOfReVisualise.LoadedFail);
+            }
+            result = false;
 
-            return false;
+            return result;
+        }
+
+        static public void OnNeedToVisualiseSchedule(AimOfReVisualise aim)
+        {
+            ReVisualiseSchedule.Invoke(aim, new ValuePassedEventArgs<List<TimedPictureModel>>(_schedule));
         }
 
         static internal void TryToSaveExistingOnes()
@@ -51,17 +66,17 @@ namespace malyar_apk
             DependencyService.Get<IOMediator>().SaveSchedule(_schedule);
             
             ISchedulingMediator ISM = DependencyService.Get<ISchedulingMediator>();
-            ISM.CleanChangesSchedule(prev_schedule_count);
 
             if (_schedule.Count == 1)
             {
-                ISM.SetWallpaperConstant(_schedule[0]);
+                ISM.SetWallpaperConstant(_schedule[0].path_to_wallpaper);
             }
             else { ISM.AssignActionsOfChange(_schedule); }   
         }
 
-        public static event EventHandler<TPModelAddedEventArgs> IntervalInserted;
-        public static event EventHandler<TPModelDeletedEventArgs> IntervalDeleted;
+        internal static event EventHandler<TPModelAddedEventArgs> IntervalInserted;
+        internal static event EventHandler<TPModelDeletedEventArgs> IntervalDeleted;
+        internal static event EventHandler<ValuePassedEventArgs<List<TimedPictureModel>>> ReVisualiseSchedule;
 
         private static double get_position_in_schedule_with_bin_search(TimedPictureModel TPM, IComparer<TimedPictureModel> comparer, int start = -1, int end = -1)
         {
@@ -109,7 +124,7 @@ namespace malyar_apk
             return comparer is CompareByStartTime? left_end + 0.5 : right_end+0.5;
         }
 
-        public static void FitIntervalIn(ChangeDirection direction, TimedPictureModel interval)
+        internal static void FitIntervalIn(ChangeDirection direction, TimedPictureModel interval)
         {
             int newcomer_indx;
             int deletion_start = -1, deletion_range = 0;
@@ -174,10 +189,10 @@ namespace malyar_apk
                     if (span[1] - span[0] >= 1)
                     {
                         if(interval.path_to_wallpaper == _schedule[(int)span[0]].path_to_wallpaper)  {
-                            _schedule[(int)span[0]].EndTime = TimeSpan.FromMinutes(interval.end_time.TotalMinutes);
+                            _schedule[(int)span[0]].EndTime = interval.end_time;
                         }
                         else {
-                            _schedule[(int)span[1]].StartTime = TimeSpan.FromMinutes(interval.start_time.TotalMinutes);
+                            _schedule[(int)span[1]].StartTime = interval.start_time;
                         }
                     }
                     else { return; }//это всё, тикаем отсюда
@@ -254,7 +269,7 @@ namespace malyar_apk
             _schedule.RemoveAt(indx);//i'm not complicating, this way is faster
         }
 
-        public static void DeleteInterval(TimedPictureModel interval)
+        internal static void DeleteInterval(TimedPictureModel interval)
         {
             int my_old_indx = (int)get_position_in_schedule_with_bin_search(interval, new CompareByStartTime());
             //let's get to know which neighbouring interval lasts longer before deleting the current one
@@ -271,7 +286,9 @@ namespace malyar_apk
             IntervalDeleted.Invoke(null, new TPModelDeletedEventArgs(my_old_indx, 2));
         }
     }
-
+}
+namespace malyar_apk
+{
     /// <summary>
     /// Used during addition of new intervals
     /// </summary>
@@ -282,3 +299,5 @@ namespace malyar_apk
         AffectUpwards, AffectDownwards, InsertNew
     }
 }
+    
+

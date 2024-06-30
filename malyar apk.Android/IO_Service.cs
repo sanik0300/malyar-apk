@@ -27,14 +27,14 @@ namespace malyar_apk.Droid
                 {
                     passed_list.Add((parceable as TPModelParcelable).source);
                 }
-                bool result = new jsonIOmanager().SaveScheduleToFile(passed_list, intent.GetStringExtra(AndroidConstants.FILEPATH_EXTRA_KEY));
+                bool result = GeneralIO.SaveScheduleToFile(passed_list, intent.GetStringExtra(AndroidConstants.FILEPATH_EXTRA_KEY));
                 back_to_activity.PutExtra(AndroidConstants.RESULT_SERIALIZED, result);
 
                 pi.Send(this, Result.Ok, back_to_activity);
             }
             else//если выгружаем список из файла
             {
-                List<TimedPictureModel> result = new jsonIOmanager().GetScheduleFromFile(intent.GetStringExtra(AndroidConstants.FILEPATH_EXTRA_KEY));
+                List<TimedPictureModel> result = GeneralIO.GetScheduleFromFile(intent.GetStringExtra(AndroidConstants.FILEPATH_EXTRA_KEY));
                 if (result != null)
                 {
                     var parcelables = new TPModelParcelable[result.Count];

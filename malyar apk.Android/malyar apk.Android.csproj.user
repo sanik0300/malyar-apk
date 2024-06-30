@@ -2,7 +2,7 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <SelectedDevice>Xiaomi M2012K11AG</SelectedDevice>
-    <ActiveDebugProfile>Xiaomi M2012K11AG %28Android 11.0 - API 30%29</ActiveDebugProfile>
+    <ActiveDebugProfile>Xiaomi M2012K11AG %28Android 12.0 - API 31%29</ActiveDebugProfile>
     <DefaultDevice>pixel_5_-_api_30</DefaultDevice>
     <AndroidDesignerPreferredTheme>MainTheme</AndroidDesignerPreferredTheme>
     <AndroidDesignerPreferredDevice>Nexus 4</AndroidDesignerPreferredDevice>

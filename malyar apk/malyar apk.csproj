@@ -13,6 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="%28timedPicture%29Model\ScheduleAddedEventArgs.cs" />
     <Compile Remove="PhoneDimesionsConverters.cs" />
     <Compile Remove="views\SeparatorCustom.xaml.cs" />
   </ItemGroup>
@@ -36,9 +37,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="views\OurResponsiveNavigationpage.xaml">
-      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
-    </EmbeddedResource>
     <EmbeddedResource Update="views\PickerCell.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>

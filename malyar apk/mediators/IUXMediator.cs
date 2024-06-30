@@ -12,8 +12,8 @@ namespace malyar_apk
     {
         void DeliverToast(string text);
         void OuchError(string decription, View snaccbar_parent);
-        bool BackgroundWorkAlreadyPrepared();
-        void InitializeBackgroundWork();
+        //bool BackgroundWorkAlreadyPrepared();
+        //void InitializeBackgroundWork();
         void DenoteSuccesfulSave(float[] percentages);
     }
 }

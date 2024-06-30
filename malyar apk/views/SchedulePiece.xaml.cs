@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 using System.ComponentModel;
 using System.IO;
 using malyar_apk.Shared;
@@ -16,6 +15,7 @@ namespace malyar_apk
                            MaxIntervalWhenChangeGrid = Constants.MinutesPerWallpaperByDefault/4*3;
 
         private static IUXMediator mediator = DependencyService.Get<IUXMediator>();
+        private static IOMediator iomdtr = DependencyService.Get<IOMediator>();
         
         private TimedPictureModel actual_schedule_part;
         private double previous_count_of_minutes = Constants.MinutesPerWallpaperByDefault;
@@ -57,7 +57,6 @@ namespace malyar_apk
             }
            has_initialized = true;
         }
-
         private void OnMessageReceived(IOMediator sender)
         {
             UpdateImgRepresentation();
@@ -70,12 +69,26 @@ namespace malyar_apk
             this.filepath_here.Text = fileexists ? actual_schedule_part.path_to_wallpaper : actual_schedule_part.path_to_wallpaper.Insert(0, "(НЕ НАЙДЕН) ");
             wallpaper.Source = fileexists ? ImageSource.FromFile(actual_schedule_part.path_to_wallpaper) : ImageSource.FromResource(Constants.FileNotFoundResourcePath);
         }
+        public void PingImageRepresentation()
+        {
+            if(File.Exists(actual_schedule_part.path_to_wallpaper) != image_defect) { return; }
+            UpdateImgRepresentation();
+            //do ONLY if image-defect is "true" but the image file is actually ok 
+            //or vice versa if file is actually cant be found but image-defect is "false"
+        }
 
         private void schedule_part_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             property_changing_from_inside = true;
             switch (e.PropertyName)
             {
+                case nameof(actual_schedule_part.path_to_wallpaper):
+                    filepath_here.Text = actual_schedule_part.path_to_wallpaper;
+                    wallpaper.Source = ImageSource.FromFile(actual_schedule_part.path_to_wallpaper);
+                    set_orig_button.IsEnabled = true;
+
+                    SaveableChangeWasDone?.Invoke(this, null);
+                    break;
                 case nameof(actual_schedule_part.start_time):
                     this.choose_start.Time = TimedPictureModel.ClampTimespan(actual_schedule_part.start_time);
                     break;
@@ -202,30 +215,21 @@ namespace malyar_apk
             property_changing_from_inside = false;
         }
 
-        private void wallpaper_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName != "Source" || this.actual_schedule_part == null)
-                return;
-
-            if ((this.Width <= 0 || this.Height <=0) && image_defect)
-                return;
-
-            this.actual_schedule_part.path_to_wallpaper = this.filepath_here.Text = ((sender as Image).Source as FileImageSource)?.File;
-
-            if (SaveableChangeWasDone!=null)
-                SaveableChangeWasDone.Invoke(this, null);
+        private void img_almost_Tapped(object sender, EventArgs e) { 
+            mediator.DeliverToast("Жмите 2 раза, чтобы поменять картинку"); 
         }
 
-        private void img_almost_Tapped(object sender, EventArgs e) { mediator.DeliverToast("Жмите 2 раза, чтобы поменять картинку"); }
-
-        private async void source_img_really_Tapped(object sender, EventArgs e)
+        private void source_img_really_Tapped(object sender, EventArgs e) 
         {
-            FileResult result = await FilePicker.PickAsync(PickOptions.Images);
-            if (result == null)
-                return;
-            (sender as Image).Source = ImageSource.FromFile(result.FullPath);
-
-            set_orig_button.IsEnabled = true;
+            IPermitMediator permit = DependencyService.Get<IPermitMediator>();
+            if (permit.IsPermitted(InvolvedPermissions.StorageRead))
+            {
+                iomdtr.AskForFileInPicker(this.actual_schedule_part);
+            }
+            else
+            {
+                permit.AskPermission(InvolvedPermissions.StorageRead);
+            }
         }
 
         private byte ClicksCount = 0;

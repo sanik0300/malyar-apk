@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using malyar_apk.Shared;
 using System.Linq;
-using Xamarin.Essentials;
 using Xamarin.Forms;
 
 namespace malyar_apk
@@ -15,35 +12,43 @@ namespace malyar_apk
         bool horizontal;
         private bool user_went_to_other_page = false;
 
-        private IOMediator memdiator;
+        private static IOMediator memdiator = DependencyService.Get<IOMediator>();
         public MainPage()
         {          
             InitializeComponent();
             TimedPicturesLoader.IntervalDeleted += Interval_WasDeleted;
             TimedPicturesLoader.IntervalInserted += Interval_WasInserted;
-            jsonIOmanager.ProgressChanged += Serialization_ProgressChanged;
-            memdiator = DependencyService.Get<IOMediator>();
-            memdiator.ScheduleLoaded += ScheduleLoaded;
+            GeneralIO.ProgressChanged += Serialization_ProgressChanged;
+            
+            TimedPicturesLoader.ReVisualiseSchedule += RevisualiseSchedule;
+            memdiator.UpdateWhichImagesExist += (s, a) => {
+                foreach (SchedulePiece SP in schedule_container.Children)
+                {
+                    SP.PingImageRepresentation();
+                }
+            };
         }
-
-        private void ScheduleLoaded(object sender, ScheduleAddedEventArgs args)
+       
+        private void RevisualiseSchedule(object sender, ValuePassedEventArgs<List<TimedPictureModel>> args)
         {
-            var IUM = DependencyService.Get<IUXMediator>();
-            if (args.TPMs == null)
+            var TPMs = args.value;
+            for (int i = 0; i < TPMs.Count; ++i)
             {
-                TimedPicturesLoader.FitIntervalIn(ChangeDirection.InsertNew, TimedPictureModel.OriginalForTheWholeDay());
-                IUM.OuchError("Не удалось расшифровать расписание обоев", schedule_container.Children[0]);
-                return;
-            }
-
-            for (int i = 0; i < args.TPMs.Count; ++i)
-            {
-                var SP = new SchedulePiece(args.TPMs[i]);
+                var SP = new SchedulePiece(TPMs[i]);
 
                 SP.SaveableChangeWasDone += OnSaveableChangeWasDone;
                 schedule_container.Children.Add(SP);
             }
-            IUM.DeliverToast("Загружено успешно");
+            
+            switch((AimOfReVisualise)sender)
+            {
+                case AimOfReVisualise.LoadedOk:
+                    DependencyService.Get<IUXMediator>().DeliverToast("Загружено успешно");
+                    break;
+                case AimOfReVisualise.LoadedFail:
+                    DependencyService.Get<IUXMediator>().OuchError("Не удалось расшифровать расписание обоев", schedule_container.Children[0]);
+                    break;
+            }
 
             if (schedule_container.Children.Count == 0)
                 return;
@@ -148,10 +153,7 @@ namespace malyar_apk
 
             if (TimedPicturesLoader.CheckOutExistingOnes())
                 return;
-
-            TimedPicturesLoader.FitIntervalIn(ChangeDirection.InsertNew, TimedPictureModel.OriginalForTheWholeDay());
-            (schedule_container.Children[0] as SchedulePiece).ProtectFromClickingDel(schedule_container.Children.Count > 1);
-
+   
             //else - wait for the event of ~deserialization~
         }
 
@@ -182,22 +184,31 @@ namespace malyar_apk
         }
 
         private string filepath_on_the_way = null;
-        private async void preview_Tapped(object sender, EventArgs e)
+        private void preview_Tapped(object sender, EventArgs e)
         {
-            FileResult result = await FilePicker.PickAsync(PickOptions.Images);
-            if (result == null)
-                return;
-            filepath_on_the_way = result.FullPath;
-            (sender as Image).Source = ImageSource.FromFile(result.FullPath);
-            
-            addnew.IsEnabled =  CheckConstructorCompleteness() && end_new.Time > begin_new.Time;
+            IPermitMediator permit = DependencyService.Get<IPermitMediator>();
+            if(permit.IsPermitted(InvolvedPermissions.StorageRead))
+            {
+                memdiator.AskForFileInPicker();
+                memdiator.FilePathDelivered += OnFilePathDelivered;
+            } 
+            else {
+                permit.AskPermission(InvolvedPermissions.StorageRead);
+            }       
+        }
+        private void OnFilePathDelivered(object sender, ValuePassedEventArgs<string> e)
+        {
+            if (e.value != null)
+            {
+                filepath_on_the_way = e.value;
+                preview.Source = ImageSource.FromFile(filepath_on_the_way);
+            }
+            addnew.IsEnabled = CheckConstructorCompleteness() && end_new.Time > begin_new.Time;
+            memdiator.FilePathDelivered -= OnFilePathDelivered;
         }
 
         private void addnew_Clicked(object sender, EventArgs e)
         {
-            if (filepath_on_the_way == null)
-                return;
-
             var model = new TimedPictureModel(filepath_on_the_way, begin_new.Time, whole_day.IsChecked && checkbox_pair.IsVisible ? TimeSpan.FromDays(1) : end_new.Time);
             TimedPicturesLoader.FitIntervalIn(ChangeDirection.InsertNew, model);         
         }
@@ -230,8 +241,15 @@ namespace malyar_apk
 
         private void save_Clicked(object sender, EventArgs e)
         {
-            TimedPicturesLoader.TryToSaveExistingOnes();
-            save.IsEnabled = false;
+            IPermitMediator permit = DependencyService.Get<IPermitMediator>();
+            if (permit.IsPermitted(InvolvedPermissions.ExactAlarm))
+            {
+                TimedPicturesLoader.TryToSaveExistingOnes();
+                save.IsEnabled = false;
+            }
+            else {
+                permit.AskPermission(InvolvedPermissions.ExactAlarm);
+            }
         }
 
         private async void to_settings_Clicked(object sender, EventArgs e)

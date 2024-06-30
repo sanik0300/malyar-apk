@@ -39,7 +39,7 @@
             </ScrollView>
 
             <local:PhoneFrame x:Name="akaphone" Background="DarkGray" BorderColor="Black" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" VerticalOptions="Center" HorizontalOptions="Center">
-                <Image x:Name="wallpaper" PropertyChanged="wallpaper_PropertyChanged" Aspect="AspectFill">
+                <Image x:Name="wallpaper" Aspect="AspectFill">
                     <Image.GestureRecognizers>
                         <TapGestureRecognizer x:Name="img_almost" NumberOfTapsRequired="1" Tapped="img_almost_Tapped"></TapGestureRecognizer>
                         <TapGestureRecognizer x:Name="source_img_really" NumberOfTapsRequired="2" Tapped="source_img_really_Tapped"></TapGestureRecognizer>

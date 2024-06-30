@@ -26,9 +26,7 @@ namespace malyar_apk
         public PickerCell()
         {
             InitializeComponent();
-            variants_here.SelectedIndexChanged += this.SelectedIndexChanged;
-            //variants_here.SelectedIndexChanged += (s, a) => { this.SelectedIndexChanged.Invoke(this, new ValueChangedEventArgs(old_value_picker_indx, variants_here.SelectedIndex)); };
-            //old_value_picker_indx = (byte)variants_here.SelectedIndex;
+            variants_here.SelectedIndexChanged += (s, a) => { this.SelectedIndexChanged.Invoke(this, EventArgs.Empty); };
         }
 
         public void InitFromSettings(string keyword)//yeee encapsulation goals
