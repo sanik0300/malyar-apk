@@ -3,9 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="malyar_apk.PickerCell">
   <ViewCell.View>
-      <StackLayout Orientation="Horizontal">
+        <Grid Padding="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
+
             <Label x:Name="title_here" VerticalOptions="Center"></Label>
-            <Picker x:Name="variants_here" HorizontalOptions="FillAndExpand"></Picker>
-      </StackLayout>
-  </ViewCell.View>
+            <Picker x:Name="variants_here" HorizontalOptions="FillAndExpand" Grid.Column="1"></Picker>
+        </Grid>
+    </ViewCell.View>
 </ViewCell>

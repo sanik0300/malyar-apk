@@ -9,8 +9,6 @@
         <ResourceDictionary>
             <Style TargetType="ImageButton" x:Key="almost_square">
                 <Style.Setters>
-                    <Setter Property="WidthRequest" Value="{Binding Source={RelativeSource Mode=Self}, Path=Height}"></Setter>
-                    <Setter Property="HeightRequest" Value="50"></Setter>
                     <Setter Property="Padding" Value="4"></Setter>
                     <Setter Property="Aspect" Value="AspectFill"></Setter>
                 </Style.Setters>
@@ -53,12 +51,12 @@
     </ContentPage.Resources>
 
     <StackLayout x:Name="stack_layout" >
-        <StackLayout Padding="6" x:Name="buttons_strip">
+        <StackLayout Padding="6" x:Name="buttons_strip" HeightRequest="50" WidthRequest="50">
             <ImageButton IsEnabled="False" x:Name="scroll_up" Clicked="scroll_up_Clicked" Style="{StaticResource almost_square}" Source="images/scroll.png"></ImageButton>
             <ImageButton x:Name="scroll_down" Clicked="scroll_down_Clicked" Style="{StaticResource almost_square}" Source="images/scroll.png" Rotation="180"></ImageButton>
 
             
-            <ProgressBar x:Name="snek" HorizontalOptions="FillAndExpand" VerticalOptions="Center" Background="#d8ffcc" ProgressColor="LightGreen"></ProgressBar>
+            <Label x:Name="wp_amount_txt" VerticalOptions="Start" HorizontalOptions="Center" TextColor="LightGreen"></Label>
 
             <ImageButton x:Name="save" Style="{StaticResource sometimes_disabled_w_icon}" IsEnabled="False" Clicked="save_Clicked"></ImageButton>
             <ImageButton x:Name="to_settings" Style="{StaticResource almost_square}" Source="images/settings_icon.png" Clicked="to_settings_Clicked"></ImageButton>

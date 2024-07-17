@@ -8,7 +8,6 @@ using Android.Support.V4.App;
 using Android.App;
 using System.Text;
 using System;
-using malyar_apk.Shared;
 using Android.Content.PM;
 using Android.Graphics;
 
@@ -72,7 +71,12 @@ namespace malyar_apk.Droid
 
         public void DeliverToast(string text)
         {
-            Toast.MakeText(BaseContext, text, ToastLength.Short).Show();
+            Toast.MakeText(BaseContext, text, ToastLength.Short).Show(); 
+        }
+
+        public void ShowWallpaperCloseUp(string pathToWP, double ratio=0)
+        {
+            new WpCloseUpDialogFragment(pathToWP, ratio).Show(BaseContext.SupportFragmentManager, AndroidConstants.WP_PREVIEW_DIALOG_TAG);
         }
 
         public void OuchError(string description, Xamarin.Forms.View snaccbar_parent)

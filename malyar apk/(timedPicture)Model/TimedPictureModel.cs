@@ -1,5 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.Json.Serialization;
 using malyar_apk;
 using Xamarin.Forms;
@@ -12,6 +14,21 @@ namespace malyar_apk.Shared {
         [JsonPropertyOrder(0)]
         public string path_to_wallpaper { get; internal set; }
        
+        public string GetTimeIntervalString()
+        {
+            TimeSpan interval = end_time - start_time;
+            if(interval.Days > 0) { return "24 ч"; }
+            StringBuilder sb = new StringBuilder();
+            if(interval.Hours > 0)
+            {
+                sb.Append($"{interval.Hours} ч");
+            }
+            if(interval.Minutes > 0)
+            {
+                sb.Append($"{interval.Minutes} мин");
+            }
+            return sb.ToString();
+        }
 
         internal TimeSpan start_time, end_time;
         public TimeSpan StartTime { 

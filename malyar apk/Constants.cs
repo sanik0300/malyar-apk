@@ -17,6 +17,7 @@ namespace malyar_apk.Shared
         public const double UiVerticalRatio = 0.8, UiHorizontalRatio = 0.9;
 
         public const string AUTOSAVE_SETTING = "autosave",
-                            MISSING_IMG_HANDLING = "no_img_what_do";
+                            MISSING_IMG_HANDLING = "no_img_what_do",
+                            HRZ_WP_DIALOG_MODE = "hrz_wp_dlg";
     }
 }

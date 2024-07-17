@@ -39,15 +39,13 @@
             </ScrollView>
 
             <local:PhoneFrame x:Name="akaphone" Background="DarkGray" BorderColor="Black" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" VerticalOptions="Center" HorizontalOptions="Center">
-                <Image x:Name="wallpaper" Aspect="AspectFill">
-                    <Image.GestureRecognizers>
-                        <TapGestureRecognizer x:Name="img_almost" NumberOfTapsRequired="1" Tapped="img_almost_Tapped"></TapGestureRecognizer>
-                        <TapGestureRecognizer x:Name="source_img_really" NumberOfTapsRequired="2" Tapped="source_img_really_Tapped"></TapGestureRecognizer>
-                    </Image.GestureRecognizers>
-                </Image>
+                <local:InteractiveImage x:Name="wallpaper" Aspect="AspectFill" 
+                                        Tapped="img_almost_Tapped" TappedTwice="source_img_really_Tapped" LongPressed="wallpaper_LongPressed"/>
             </local:PhoneFrame>
 
             <StackLayout x:Name="buttons_container" Grid.Column="1" Grid.Row="1" Orientation="Horizontal" HorizontalOptions="End">
+                <Label x:Name="time_text_label" TextColor="Blue" HorizontalOptions="FillAndExpand" VerticalOptions="Center" HorizontalTextAlignment="Center"></Label>
+                
                 <Label x:Name="set_orig_button" Text="SET_CRT" Padding="1" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" Style="{StaticResource Key=label_as_button}">
                     <Label.GestureRecognizers>
                         <TapGestureRecognizer x:Name="almost2" NumberOfTapsRequired="1" Tapped="almost2_Tapped"></TapGestureRecognizer>

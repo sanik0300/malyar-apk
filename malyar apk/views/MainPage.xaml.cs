@@ -18,7 +18,6 @@ namespace malyar_apk
             InitializeComponent();
             TimedPicturesLoader.IntervalDeleted += Interval_WasDeleted;
             TimedPicturesLoader.IntervalInserted += Interval_WasInserted;
-            GeneralIO.ProgressChanged += Serialization_ProgressChanged;
             
             TimedPicturesLoader.ReVisualiseSchedule += RevisualiseSchedule;
             memdiator.UpdateWhichImagesExist += (s, a) => {
@@ -53,16 +52,10 @@ namespace malyar_apk
             if (schedule_container.Children.Count == 0)
                 return;
             (schedule_container.Children[0] as SchedulePiece).ProtectFromClickingDel(schedule_container.Children.Count > 1);
+            wp_amount_txt.Text = $"{args.value.Count} смен(ы) обоев в расписании";
         }
 
         private void OnSaveableChangeWasDone(object sender, EventArgs e) { save.IsEnabled = true; }
-
-        private void Serialization_ProgressChanged(object sender, ValueChangedEventArgs e)
-        {
-            if(!horizontal) {
-                snek.Progress = e.NewValue;
-            }     
-        }
 
         private async void Interval_WasInserted(object sender, TPModelAddedEventArgs args)
         {
@@ -89,6 +82,8 @@ namespace malyar_apk
             //Scroll to the center of newly added SP------------------
             double scrollpos = GetScrollPosition(ref schedule_container, args.PositionIndex, horizontal);
             await scrollview.ScrollToAsync(horizontal ? scrollpos : 0, horizontal ? 0 : scrollpos, true);
+
+            wp_amount_txt.Text = $"{schedule_container.Children.Count} смен(ы) обоев в расписании";
         }
         private double GetScrollPosition(ref StackLayout layout, int target_view_position, bool horizontal)
         {
@@ -139,6 +134,7 @@ namespace malyar_apk
             }          
             (schedule_container.Children[0] as SchedulePiece).ProtectFromClickingDel(schedule_container.Children.Count > 1);
             OnSaveableChangeWasDone(this, EventArgs.Empty);
+            wp_amount_txt.Text = $"{schedule_container.Children.Count} смен(ы) обоев в расписании";
         }
 
         protected override void OnAppearing()
@@ -273,11 +269,14 @@ namespace malyar_apk
             buttons_strip.Orientation = horizontal ? StackOrientation.Vertical : StackOrientation.Horizontal;//панель где кнопка с настройками
             add_another.Orientation = horizontal ? StackOrientation.Vertical : StackOrientation.Horizontal;//панель где кнопка добавления
             schedule_container.Orientation = horizontal ? StackOrientation.Horizontal : StackOrientation.Vertical;//панель которая содержит сами обои
-            snek.IsVisible = !horizontal;
-            //loading.IsVisible = horizontal;
 
             scroll_up.Rotation = horizontal ? -90 : 0;
             scroll_down.Rotation = horizontal ? 90 : 180;
+
+            int display_cnt = schedule_container.Children.Count;
+            wp_amount_txt.Text = horizontal? display_cnt.ToString() : wp_amount_txt.Text = $"{display_cnt} смен(ы) обоев в расписании";
+            wp_amount_txt.FontSize = horizontal ? 56 : 14;
+            wp_amount_txt.VerticalOptions = horizontal ? LayoutOptions.CenterAndExpand : LayoutOptions.Center;
         }
     }
 }

@@ -4,23 +4,32 @@
              x:Class="malyar_apk.SettingsPage"
              xmlns:local="clr-namespace:malyar_apk" Title="Настройки">
     <ContentPage.Content>
-        <StackLayout Orientation="Vertical" VerticalOptions="FillAndExpand">
-            <TableView>
-                <TableRoot>
-                    <TableSection>
+        <StackLayout Orientation="Vertical" VerticalOptions="FillAndExpand" x:Name="settingsLayout">
+            <TableView HasUnevenRows="True">
+                <TableRoot x:Name="tableRoot">
+                    <TableSection Title="Взаимодействие с файлами обоев">
                         <SwitchCell x:Name="autosave_switch" Text="Автосохранение" On="True" OnChanged="autosave_switch_OnChanged" OnColor="Violet"></SwitchCell>
-                        <local:PickerCell x:Name="picker_cell" Title="Если файл обоев не найден" SelectedIndexChanged="picker_cell_SelectedIndexChanged">
+                        <local:PickerCell x:Name="no_wp_setting_picker" Title="Если файл обоев не найден" 
+                                          SelectedIndexChanged="NoWP_SettingChanged">
                             <local:PickerCell.Items>
                                 <x:String>Ничего не делать</x:String>
                                 <x:String>Поставить следующие</x:String>
                                 <x:String>Поставить системные</x:String>
                             </local:PickerCell.Items>
                         </local:PickerCell>
-                        <!--ImageCell x:Name="auxillary_wallpaper"></ImageCell-->
+                    </TableSection>
+                    <TableSection Title="Отображение">
+                        <local:PickerCell x:Name="hrz_dialog_setting_picker" Title="Просмотр обоев крупным планом при горизонтальной ориентации" 
+                                          SelectedIndexChanged="HrzWP_DialogSettingChanged">
+                            <local:PickerCell.Items>
+                                <x:String>Все равно вертикальный</x:String>
+                                <x:String>Поворачивать горизонтально</x:String>
+                            </local:PickerCell.Items>
+                        </local:PickerCell>
                     </TableSection>
                 </TableRoot>
             </TableView>
-            <Button VerticalOptions="End" HorizontalOptions="Center" Text="Сбросить смену обоев" x:Name="stop_changing" Clicked="stop_changing_Clicked" Margin="50"></Button>
+            <Button VerticalOptions="End" HorizontalOptions="Center" Text="Сбросить смену обоев" x:Name="stopChangingBtn" Clicked="stop_changing_Clicked" Margin="50"></Button>
         </StackLayout>
     </ContentPage.Content>
 </ContentPage>
