@@ -20,9 +20,33 @@ namespace malyar_apk
                                     private set { variants_here.SelectedIndex = value; }
         }
 
+
+        public static readonly BindableProperty LabelTextColorProperty = BindableProperty.Create(nameof(LabelTextColor),typeof(Color), typeof(PickerCell),
+                                                                                                 propertyChanged: LabelTextColorChanged);
+        private static void LabelTextColorChanged(BindableObject bindable, object oldValue, object newValue)
+        {
+            (bindable as PickerCell).title_here.TextColor = (Color)newValue;
+        }
+        public Color LabelTextColor
+        {
+            get { return title_here.TextColor; }
+            set { title_here.TextColor = value; }
+        }
+
+
+        public static readonly BindableProperty PickerTextColorProperty = BindableProperty.Create(nameof(PickerTextColor), typeof(Color), typeof(PickerCell),
+                                                                                                  propertyChanged: PickerTextColorChanged);
+        private static void PickerTextColorChanged(BindableObject bindable, object oldValue, object newValue)
+        {
+            (bindable as PickerCell).variants_here.TextColor = (Color)newValue;
+        }
+        public Color PickerTextColor
+        {
+            get { return variants_here.TextColor; }
+            set { variants_here.TextColor = value; }
+        }
+
         public event EventHandler SelectedIndexChanged;
-        //public event EventHandler<ValueChangedEventArgs> SelectedIndexChanged;
-        //private byte old_value_picker_indx;
         public PickerCell()
         {
             InitializeComponent();

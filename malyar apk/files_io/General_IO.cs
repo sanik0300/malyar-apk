@@ -14,20 +14,9 @@ namespace malyar_apk.Shared
 {
     public static class GeneralIO
     {
-        public static event EventHandler<ValueChangedEventArgs> ProgressChanged;
-        
-        private static float MaxOfProgress, processed_so_far;
-
-        public static void OnProgressChanged()
-        {
-            ++processed_so_far;
-            ProgressChanged.Invoke(null, new ValueChangedEventArgs(default, processed_so_far / MaxOfProgress));
-        }
-        
-
         public static List<TimedPictureModel> GetScheduleFromFile(string where_from)
         {
-            MaxOfProgress = Preferences.Get(Constants.SAVED_WALLPAPERS_COUNT_KEY, 24 / (Constants.MinutesPerWallpaperByDefault/60));
+            int savedWPsAmount = Preferences.Get(Constants.SAVED_WALLPAPERS_COUNT_KEY, 24 / (Constants.MinutesPerWallpaperByDefault/60));
             List<TimedPictureModel> result = null;
 
             bool legacy_file = !File.Exists(where_from);
@@ -41,14 +30,14 @@ namespace malyar_apk.Shared
                 {
                     using (var sr = new StreamReader(Fs))
                     {
-                        if (MaxOfProgress == 1) {
+                        if (savedWPsAmount == 1) {
                             result = new List<TimedPictureModel>(1) { new TimedPictureModel(sr.ReadToEnd(), TimeSpan.Zero, TimeSpan.FromDays(1)) };
                         }
                         else if (legacy_file) {                           
                             result = JsonSerializer.Deserialize<List<TimedPictureModel>>(sr.ReadToEnd(), new JsonSerializerOptions() { WriteIndented = true });
                         }
                         else {
-                            result = new List<TimedPictureModel>((int)MaxOfProgress);
+                            result = new List<TimedPictureModel>(savedWPsAmount);
                             
                             while(!sr.EndOfStream)
                             {
@@ -67,17 +56,12 @@ namespace malyar_apk.Shared
                 result[result.Count - 1].end_time = TimeSpan.FromDays(1);
             }
             catch(Exception e) { ReactToException(e); }
-            finally 
-            {           
-                ProgressChanged.Invoke(null, new ValueChangedEventArgs(MaxOfProgress, 0));     
-            }
+            
             return result;
         }
 
         public static bool SaveScheduleToFile(IList<TimedPictureModel> list_to_save, string where_to)
-        {
-            MaxOfProgress = (uint)list_to_save.Count;
-            
+        {            
             if(!File.Exists(where_to))//there can exist only either schedule file without extension (new), or .json (legacy)
             {
                 File.Delete(where_to + ".json");
@@ -108,9 +92,6 @@ namespace malyar_apk.Shared
             {
                 ReactToException(e);
                 return false; 
-            }
-            finally {
-                ProgressChanged.Invoke(null, new ValueChangedEventArgs(MaxOfProgress, 0));
             }
         }
 

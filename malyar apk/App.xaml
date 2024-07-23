@@ -3,6 +3,16 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="malyar_apk.App">
     <Application.Resources>
+        <Color x:Key="base_l">#a7c4d4</Color>
+        <Color x:Key="subtle_l">#eaeeef</Color>
+        <Color x:Key="greyish_l">#9eabb3</Color>
+        <Color x:Key="bright_l">#5e83ba</Color>
+        <Color x:Key="contrast_l">#e7f0ed</Color>
 
+        <Color x:Key="base_d">#032e42</Color>
+        <Color x:Key="subtle_d">#0a1417</Color>
+        <Color x:Key="greyish_d">#4f6c77</Color>
+        <Color x:Key="bright_d">#2b6684</Color>
+        <Color x:Key="contrast_d">#012e67</Color>
     </Application.Resources>
 </Application>

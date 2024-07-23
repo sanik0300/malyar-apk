@@ -3,21 +3,46 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="malyar_apk.SchedulePiece"
              xmlns:local="clr-namespace:malyar_apk"
-             Background="SteelBlue">
-
+             BackgroundColor="{AppThemeBinding Default={StaticResource base_l}, 
+                                               Light={StaticResource base_l}, Dark={StaticResource base_d}}">
     <ContentView.Resources>
         <ResourceDictionary>
             <Style TargetType="Label" x:Key="label_as_button">
                 <Style.Triggers>
                     <Trigger TargetType="Label" Property="IsEnabled" Value="True">
-                        <Setter Property="BackgroundColor" Value="AliceBlue"></Setter>
-                        <Setter Property="TextColor" Value="Navy"></Setter>
+                        <Setter Property="BackgroundColor" 
+                                Value="{AppThemeBinding Default={StaticResource contrast_l}, 
+                                               Light={StaticResource contrast_l}, Dark={StaticResource bright_d}}"></Setter>
+                        <Setter Property="TextColor" 
+                                Value="{AppThemeBinding Default={StaticResource bright_l}, 
+                                               Light={StaticResource bright_l}, Dark={StaticResource base_l}}"></Setter>
                     </Trigger>
                     <Trigger TargetType="Label" Property="IsEnabled" Value="False">
-                        <Setter Property="BackgroundColor" Value="LightGray"></Setter>
-                        <Setter Property="TextColor" Value="DarkGray"></Setter>
+                        <Setter Property="BackgroundColor" 
+                                Value="{AppThemeBinding Default={StaticResource greyish_l}, 
+                                               Light={StaticResource greyish_l}, Dark={StaticResource greyish_d}}"></Setter>
+                        <Setter Property="TextColor" 
+                                Value="{AppThemeBinding Default={StaticResource subtle_l}, 
+                                               Light={StaticResource subtle_l}, Dark={StaticResource base_d}}"></Setter>
                     </Trigger>
                 </Style.Triggers>
+            </Style>
+            <Style TargetType="TimePicker" x:Key="timePickerWithThemes">
+                <Style.Triggers>
+                    <Trigger TargetType="TimePicker" Property="IsEnabled" Value="True">
+                        <Setter Property="TextColor"
+                            Value="{AppThemeBinding Default={StaticResource base_d},
+                                                    Light={StaticResource base_d}, Dark={StaticResource contrast_l}}"></Setter>
+                    </Trigger>
+                    <Trigger TargetType="TimePicker" Property="IsEnabled" Value="False">
+                        <Setter Property="TextColor"
+                            Value="{AppThemeBinding Default={StaticResource greyish_l}, 
+                                                    Light={StaticResource greyish_l}, Dark={StaticResource greyish_d}}"></Setter>
+                    </Trigger>
+                </Style.Triggers>
+                
+                    
+                
             </Style>
         </ResourceDictionary>
     </ContentView.Resources>
@@ -29,42 +54,59 @@
                 <ColumnDefinition Width="2*"></ColumnDefinition>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="15"></RowDefinition>
+                <RowDefinition Height="20"></RowDefinition>
                 <RowDefinition Height="1*"></RowDefinition>
                 <RowDefinition Height="4*"></RowDefinition>
             </Grid.RowDefinitions>
 
             <ScrollView x:Name="filepath_place" Orientation="Horizontal" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2">
-                <Label x:Name="filepath_here" Background="LightBlue" TextColor="Black"></Label>
+                <Label x:Name="filepath_here" 
+                       TextColor="{AppThemeBinding Default={StaticResource subtle_d}, 
+                                                        Light={StaticResource subtle_d}, Dark={StaticResource subtle_l}}"
+                       Background="{AppThemeBinding Default={StaticResource subtle_l}, 
+                                                        Light={StaticResource subtle_l}, Dark={StaticResource subtle_d}}"></Label>
             </ScrollView>
 
-            <local:PhoneFrame x:Name="akaphone" Background="DarkGray" BorderColor="Black" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" VerticalOptions="Center" HorizontalOptions="Center">
-                <Image x:Name="wallpaper" Aspect="AspectFill">
-                    <Image.GestureRecognizers>
-                        <TapGestureRecognizer x:Name="img_almost" NumberOfTapsRequired="1" Tapped="img_almost_Tapped"></TapGestureRecognizer>
-                        <TapGestureRecognizer x:Name="source_img_really" NumberOfTapsRequired="2" Tapped="source_img_really_Tapped"></TapGestureRecognizer>
-                    </Image.GestureRecognizers>
-                </Image>
+             
+            <local:PhoneFrame x:Name="akaphone" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2"
+                              VerticalOptions="Center" HorizontalOptions="Center" Padding="4"
+                              BackgroundColor="{AppThemeBinding Default={StaticResource contrast_l}, 
+                                                            Light={StaticResource contrast_l}, Dark={StaticResource subtle_d}}">
+                <Frame x:Name="frameToClipImg" Padding="0" IsClippedToBounds="True">
+                     <local:InteractiveImage x:Name="wallpaper" Aspect="AspectFill"
+                                             Tapped="img_almost_Tapped" TappedTwice="source_img_really_Tapped" LongPressed="wallpaper_LongPressed"/>
+                </Frame>
+               
             </local:PhoneFrame>
 
             <StackLayout x:Name="buttons_container" Grid.Column="1" Grid.Row="1" Orientation="Horizontal" HorizontalOptions="End">
-                <Label x:Name="set_orig_button" Text="SET_CRT" Padding="1" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" Style="{StaticResource Key=label_as_button}">
+                <Label x:Name="time_text_label" HorizontalOptions="FillAndExpand" VerticalOptions="Center" HorizontalTextAlignment="Center"
+                       TextColor="{AppThemeBinding Default={StaticResource bright_l}, 
+                                                   Light={StaticResource bright_l}, Dark={StaticResource subtle_l}}"></Label>
+                <Label x:Name="set_orig_button" Text="SET_CRT" Padding="1" 
+                       HorizontalTextAlignment="Center" VerticalTextAlignment="Center" Style="{StaticResource Key=label_as_button}">
                     <Label.GestureRecognizers>
                         <TapGestureRecognizer x:Name="almost2" NumberOfTapsRequired="1" Tapped="almost2_Tapped"></TapGestureRecognizer>
                         <TapGestureRecognizer x:Name="_set_orig_button_Pressed" NumberOfTapsRequired="2" Tapped="set_crt_button_Pressed2"></TapGestureRecognizer>
                     </Label.GestureRecognizers>
                 </Label>
                 
-                <ImageButton Source="images/delete.png" Aspect="AspectFit"  x:Name="del_button" BackgroundColor="LightSalmon" VerticalOptions="Center"
-                        MinimumHeightRequest="30" MinimumWidthRequest="50" Clicked="del_button_Clicked">
+                <ImageButton x:Name="del_button" Source="images/delete.png" Aspect="AspectFit" VerticalOptions="Center"
+                             MinimumHeightRequest="30" MinimumWidthRequest="50" Clicked="del_button_Clicked"
+                             BackgroundColor="{AppThemeBinding Default={StaticResource bright_l}, 
+                                                               Light={StaticResource bright_l}, Dark={StaticResource bright_l}}">
                 </ImageButton>
             </StackLayout>
             
 
-            <StackLayout x:Name="timespans_container" Grid.Column="1" Grid.Row="2" Orientation="Horizontal" BackgroundColor="LightSteelBlue">
+            <StackLayout x:Name="timespans_container" Grid.Column="1" Grid.Row="2" Orientation="Horizontal" 
+                         BackgroundColor="{AppThemeBinding Default={StaticResource subtle_l}, 
+                                                           Light={StaticResource subtle_l}, Dark={StaticResource contrast_d}}">
                 <StackLayout x:Name="timespans_joined"  HorizontalOptions="CenterAndExpand" VerticalOptions="Center" Padding="-2">
-                    <TimePicker x:Name="choose_start" PropertyChanged="TimePicker_PropertyChanged" IsEnabled="False"></TimePicker>
-                    <TimePicker x:Name="choose_end" PropertyChanged="TimePicker_PropertyChanged" IsEnabled="False"></TimePicker>
+                    <TimePicker x:Name="choose_start" PropertyChanged="TimePicker_PropertyChanged" 
+                                IsEnabled="False" Style="{StaticResource Key=timePickerWithThemes}"></TimePicker>
+                    <TimePicker x:Name="choose_end" PropertyChanged="TimePicker_PropertyChanged" 
+                                IsEnabled="False" Style="{StaticResource Key=timePickerWithThemes}"></TimePicker>
                 </StackLayout>
             </StackLayout>
         </Grid>

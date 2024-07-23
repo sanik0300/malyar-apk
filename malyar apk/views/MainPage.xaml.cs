@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using malyar_apk.Shared;
 using System.Linq;
 using Xamarin.Forms;
+using System.Text;
 
 namespace malyar_apk
 {
@@ -12,16 +13,21 @@ namespace malyar_apk
         bool horizontal;
         private bool user_went_to_other_page = false;
 
-        private static IOMediator memdiator = DependencyService.Get<IOMediator>();
+        private static IOMediator iomedi = DependencyService.Get<IOMediator>();
+        private static I_UIMediator uimedi = DependencyService.Get<I_UIMediator>();
         public MainPage()
         {          
             InitializeComponent();
+            (App.Current as App).UserAppThemeChanged += (s, a) =>
+            {
+                if(user_went_to_other_page) { return; }
+                randomBackgroundAccordingToTheme(s as App);
+            };
             TimedPicturesLoader.IntervalDeleted += Interval_WasDeleted;
             TimedPicturesLoader.IntervalInserted += Interval_WasInserted;
-            GeneralIO.ProgressChanged += Serialization_ProgressChanged;
             
             TimedPicturesLoader.ReVisualiseSchedule += RevisualiseSchedule;
-            memdiator.UpdateWhichImagesExist += (s, a) => {
+            iomedi.UpdateWhichImagesExist += (s, a) => {
                 foreach (SchedulePiece SP in schedule_container.Children)
                 {
                     SP.PingImageRepresentation();
@@ -53,16 +59,10 @@ namespace malyar_apk
             if (schedule_container.Children.Count == 0)
                 return;
             (schedule_container.Children[0] as SchedulePiece).ProtectFromClickingDel(schedule_container.Children.Count > 1);
+            wp_amount_txt.Text = $"{args.value.Count} смен(ы) обоев в расписании";
         }
 
         private void OnSaveableChangeWasDone(object sender, EventArgs e) { save.IsEnabled = true; }
-
-        private void Serialization_ProgressChanged(object sender, ValueChangedEventArgs e)
-        {
-            if(!horizontal) {
-                snek.Progress = e.NewValue;
-            }     
-        }
 
         private async void Interval_WasInserted(object sender, TPModelAddedEventArgs args)
         {
@@ -89,6 +89,8 @@ namespace malyar_apk
             //Scroll to the center of newly added SP------------------
             double scrollpos = GetScrollPosition(ref schedule_container, args.PositionIndex, horizontal);
             await scrollview.ScrollToAsync(horizontal ? scrollpos : 0, horizontal ? 0 : scrollpos, true);
+
+            wp_amount_txt.Text = $"{schedule_container.Children.Count} смен(ы) обоев в расписании";
         }
         private double GetScrollPosition(ref StackLayout layout, int target_view_position, bool horizontal)
         {
@@ -139,17 +141,34 @@ namespace malyar_apk
             }          
             (schedule_container.Children[0] as SchedulePiece).ProtectFromClickingDel(schedule_container.Children.Count > 1);
             OnSaveableChangeWasDone(this, EventArgs.Empty);
+            wp_amount_txt.Text = $"{schedule_container.Children.Count} смен(ы) обоев в расписании";
+        }
+
+        private void randomBackgroundAccordingToTheme(App app)
+        {
+            int backgroundNumber = new Random().Next(1, uimedi.CountBackgrounds() + 1);
+            StringBuilder bgImagePath = new StringBuilder($"images/background/bg{backgroundNumber}");
+            if (app.UserAppTheme == OSAppTheme.Dark)
+            {
+                bgImagePath.Append("_dark");
+            }
+            bgImagePath.Append(".jpg");
+            this.BackgroundImageSource = new FileImageSource() { File = bgImagePath.ToString() };
+            uimedi.FixBackgroundTiling(this);
         }
 
         protected override void OnAppearing()
         {
             base.OnAppearing();
 
+            randomBackgroundAccordingToTheme(App.Current as App);
+            uimedi.AdjustOpacity(buttons_strip, 0.8f);
+
             if (user_went_to_other_page) {
                 user_went_to_other_page = false;
                 return;
             }
-            if (memdiator.WasInitialized) {return;}               
+            if (iomedi.WasInitialized) {return;}               
 
             if (TimedPicturesLoader.CheckOutExistingOnes())
                 return;
@@ -189,8 +208,8 @@ namespace malyar_apk
             IPermitMediator permit = DependencyService.Get<IPermitMediator>();
             if(permit.IsPermitted(InvolvedPermissions.StorageRead))
             {
-                memdiator.AskForFileInPicker();
-                memdiator.FilePathDelivered += OnFilePathDelivered;
+                iomedi.AskForFileInPicker();
+                iomedi.FilePathDelivered += OnFilePathDelivered;
             } 
             else {
                 permit.AskPermission(InvolvedPermissions.StorageRead);
@@ -204,7 +223,7 @@ namespace malyar_apk
                 preview.Source = ImageSource.FromFile(filepath_on_the_way);
             }
             addnew.IsEnabled = CheckConstructorCompleteness() && end_new.Time > begin_new.Time;
-            memdiator.FilePathDelivered -= OnFilePathDelivered;
+            iomedi.FilePathDelivered -= OnFilePathDelivered;
         }
 
         private void addnew_Clicked(object sender, EventArgs e)
@@ -268,16 +287,21 @@ namespace malyar_apk
             this.width = width;
             this.height = height;
 
+            uimedi.FixBackgroundTiling(this);
+
             scrollview.Orientation = horizontal ? ScrollOrientation.Horizontal : ScrollOrientation.Vertical;
             stack_layout.Orientation = horizontal ? StackOrientation.Horizontal : StackOrientation.Vertical;//большая панель где содержится вообще всё
             buttons_strip.Orientation = horizontal ? StackOrientation.Vertical : StackOrientation.Horizontal;//панель где кнопка с настройками
             add_another.Orientation = horizontal ? StackOrientation.Vertical : StackOrientation.Horizontal;//панель где кнопка добавления
             schedule_container.Orientation = horizontal ? StackOrientation.Horizontal : StackOrientation.Vertical;//панель которая содержит сами обои
-            snek.IsVisible = !horizontal;
-            //loading.IsVisible = horizontal;
 
             scroll_up.Rotation = horizontal ? -90 : 0;
             scroll_down.Rotation = horizontal ? 90 : 180;
+
+            int display_cnt = schedule_container.Children.Count;
+            wp_amount_txt.Text = horizontal? display_cnt.ToString() : wp_amount_txt.Text = $"{display_cnt} смен(ы) обоев в расписании";
+            wp_amount_txt.FontSize = horizontal ? 56 : 14;
+            wp_amount_txt.VerticalOptions = horizontal ? LayoutOptions.CenterAndExpand : LayoutOptions.Center;
         }
     }
 }

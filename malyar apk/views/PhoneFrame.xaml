@@ -2,9 +2,5 @@
 <Frame xmlns="http://xamarin.com/schemas/2014/forms" 
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:malyar_apk"
-             x:Class="malyar_apk.views.PhoneFrame" >
-
-    <Frame.WidthRequest>
-        <Binding Source="{RelativeSource Mode=Self}" Path="Height" Converter="{StaticResource phoneconverter}"></Binding>
-    </Frame.WidthRequest>
+             x:Class="malyar_apk.PhoneFrame">
 </Frame>
