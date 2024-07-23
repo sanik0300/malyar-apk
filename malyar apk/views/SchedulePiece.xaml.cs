@@ -4,6 +4,7 @@ using System.IO;
 using malyar_apk.Shared;
 using Xamarin.Essentials;
 using Xamarin.Forms;
+using Xamarin.Forms.PlatformConfiguration;
 using Xamarin.Forms.Xaml;
 
 namespace malyar_apk
@@ -46,6 +47,7 @@ namespace malyar_apk
             InitializeComponent();
             this.choose_start.Time = model.start_time;
             this.choose_end.Time = TimedPictureModel.ClampTimespan(model.end_time);
+            time_text_label.Text = model.GetTimeIntervalString();
 
             if (worth_asking_for_file) {
                 UpdateImgRepresentation();
@@ -91,9 +93,11 @@ namespace malyar_apk
                     break;
                 case nameof(actual_schedule_part.start_time):
                     this.choose_start.Time = TimedPictureModel.ClampTimespan(actual_schedule_part.start_time);
+                    time_text_label.Text = actual_schedule_part.GetTimeIntervalString();
                     break;
                 case nameof(actual_schedule_part.end_time):
                     this.choose_end.Time = TimedPictureModel.ClampTimespan(actual_schedule_part.end_time);
+                    time_text_label.Text = actual_schedule_part.GetTimeIntervalString();
                     break;
             }
             property_changing_from_inside = false;
@@ -147,8 +151,11 @@ namespace malyar_apk
             this.height = height;
 
             double padding_coef = Math.Max(2, 10 * DimensionMultiplier);
-            akaphone.CornerRadius = (float)padding_coef;
-            akaphone.Padding = new Thickness(padding_coef);
+            akaphone.CornerRadius = frameToClipImg.CornerRadius = (float)padding_coef;
+            if(filepath_here.Width > 0)
+            {
+                filepath_place.ScrollToAsync(filepath_here.Width, 0, false);
+            }
 
             bool change_grid_vert = !horizontal && actual_schedule_part.DurationInMinutes <= MaxIntervalWhenChangeGrid;
             double grid_offset = change_grid_vert ? 1 - Math.Pow(DimensionMultiplier, 2) : 0;
@@ -215,9 +222,7 @@ namespace malyar_apk
             property_changing_from_inside = false;
         }
 
-        private void img_almost_Tapped(object sender, EventArgs e) { 
-            mediator.DeliverToast("Жмите 2 раза, чтобы поменять картинку"); 
-        }
+        private void img_almost_Tapped(object sender, EventArgs e) => mediator.DeliverToast("Жмите 2 раза, чтобы поменять картинку"); 
 
         private void source_img_really_Tapped(object sender, EventArgs e) 
         {
@@ -226,10 +231,24 @@ namespace malyar_apk
             {
                 iomdtr.AskForFileInPicker(this.actual_schedule_part);
             }
-            else
-            {
+            else {
                 permit.AskPermission(InvolvedPermissions.StorageRead);
             }
+        }
+
+        private void wallpaper_LongPressed(object sender, EventArgs e)
+        {
+            if (!File.Exists(actual_schedule_part.path_to_wallpaper)) { return; }
+
+            double ratioParam;
+            if (DeviceDisplay.MainDisplayInfo.Width > DeviceDisplay.MainDisplayInfo.Height)
+            {
+                ratioParam = DeviceDisplay.MainDisplayInfo.Height / DeviceDisplay.MainDisplayInfo.Width;
+            }
+            else {
+                ratioParam = DeviceDisplay.MainDisplayInfo.Width / DeviceDisplay.MainDisplayInfo.Height;
+            }
+            DependencyService.Get<IUXMediator>().ShowWallpaperCloseUp(actual_schedule_part.path_to_wallpaper, ratioParam);
         }
 
         private byte ClicksCount = 0;
@@ -265,7 +284,10 @@ namespace malyar_apk
         }
         private void set_crt_button_Pressed2(object sender, EventArgs e)
         {
-            wallpaper.Source = FileImageSource.FromFile(DependencyService.Get<IOMediator>().PathToOriginalWP);
+            string pathToOrig = DependencyService.Get<IOMediator>().PathToOriginalWP;
+            actual_schedule_part.path_to_wallpaper = pathToOrig;
+            wallpaper.Source = FileImageSource.FromFile(pathToOrig);
+            filepath_here.Text = pathToOrig;
             (sender as View).IsEnabled = false;
         }
     }

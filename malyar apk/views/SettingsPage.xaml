@@ -2,25 +2,76 @@
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="malyar_apk.SettingsPage"
-             xmlns:local="clr-namespace:malyar_apk" Title="Настройки">
+             xmlns:local="clr-namespace:malyar_apk" Title="Настройки"
+             BackgroundColor="{AppThemeBinding Default=White, Light=White, Dark={StaticResource subtle_d}}">
     <ContentPage.Content>
-        <StackLayout Orientation="Vertical" VerticalOptions="FillAndExpand">
-            <TableView>
-                <TableRoot>
-                    <TableSection>
-                        <SwitchCell x:Name="autosave_switch" Text="Автосохранение" On="True" OnChanged="autosave_switch_OnChanged" OnColor="Violet"></SwitchCell>
-                        <local:PickerCell x:Name="picker_cell" Title="Если файл обоев не найден" SelectedIndexChanged="picker_cell_SelectedIndexChanged">
+        <StackLayout Orientation="Vertical" VerticalOptions="FillAndExpand" x:Name="settingsLayout">
+            <TableView HasUnevenRows="True">
+                <TableRoot x:Name="tableRoot">
+                    <TableSection Title="Взаимодействие с файлами обоев"
+                                  TextColor="{AppThemeBinding Default={StaticResource contrast_d}, Light={StaticResource contrast_d},
+                                                              Dark={StaticResource subtle_l}}">
+                        <SwitchCell x:Name="autosave_switch" Text="Автосохранение" On="True" OnChanged="autosave_switch_OnChanged"
+                                    OnColor="{AppThemeBinding Default={StaticResource bright_l}, Light={StaticResource bright_l},
+                                                              Dark={StaticResource bright_d}}"></SwitchCell>
+                        <local:PickerCell x:Name="no_wp_setting_picker" Title="Если файл обоев не найден"
+                                          SelectedIndexChanged="NoWP_SettingChanged"
+                                          PickerTextColor="{AppThemeBinding Default={StaticResource contrast_d}, Light={StaticResource contrast_d},
+                                                                            Dark={StaticResource subtle_l}}"
+                                          LabelTextColor="{AppThemeBinding Default={StaticResource subtle_d}, Light={StaticResource subtle_d},
+                                                                            Dark={StaticResource subtle_l}}">
                             <local:PickerCell.Items>
                                 <x:String>Ничего не делать</x:String>
                                 <x:String>Поставить следующие</x:String>
                                 <x:String>Поставить системные</x:String>
                             </local:PickerCell.Items>
                         </local:PickerCell>
-                        <!--ImageCell x:Name="auxillary_wallpaper"></ImageCell-->
+                    </TableSection>
+                    <TableSection Title="Отображение"
+                                  TextColor="{AppThemeBinding Default={StaticResource contrast_d}, Light={StaticResource contrast_d},
+                                                              Dark={StaticResource subtle_l}}">
+                        <local:PickerCell x:Name="hrz_dialog_setting_picker" Title="Просмотр обоев крупным планом при горизонтальной ориентации" 
+                                          SelectedIndexChanged="HrzWP_DialogSettingChanged"
+                                          PickerTextColor="{AppThemeBinding Default={StaticResource contrast_d}, Light={StaticResource contrast_d},
+                                                                           Dark={StaticResource subtle_l}}"
+                                          LabelTextColor="{AppThemeBinding Default={StaticResource subtle_d}, Light={StaticResource subtle_d},
+                                                                            Dark={StaticResource subtle_l}}">
+                            <local:PickerCell.Items>
+                                <x:String>Все равно вертикальный</x:String>
+                                <x:String>Поворачивать горизонтально</x:String>
+                            </local:PickerCell.Items>
+                        </local:PickerCell>
+                    </TableSection>
+                    <TableSection Title="Внешний вид" x:Name="appearanceSection"
+                                  TextColor="{AppThemeBinding Default={StaticResource contrast_d}, Light={StaticResource contrast_d},
+                                                              Dark={StaticResource subtle_l}}">
+                        <SwitchCell x:Name="theme_switch" Text="Тема:"
+                                    OnColor="{AppThemeBinding Default={StaticResource bright_l}, Light={StaticResource bright_l},
+                                                              Dark={StaticResource bright_d}}"></SwitchCell>
+                        <local:PickerCell x:Name="theme_setting_picker" Title="Тема"
+                                          PickerTextColor="{AppThemeBinding Default={StaticResource contrast_d}, Light={StaticResource contrast_d},
+                                                                           Dark={StaticResource subtle_l}}"
+                                          LabelTextColor="{AppThemeBinding Default={StaticResource subtle_d}, Light={StaticResource subtle_d},
+                                                                            Dark={StaticResource subtle_l}}">
+                            <local:PickerCell.Items>
+                                <x:String>Как на устройстве</x:String>
+                                <x:String>Светлая</x:String>
+                                <x:String>Тёмная</x:String>
+                            </local:PickerCell.Items>
+                        </local:PickerCell>
+                    </TableSection>
+                    <TableSection>
+                        <ViewCell>
+                            <Button Text="Сбросить смену обоев" x:Name="stopChangingBtn" Clicked="stop_changing_Clicked"
+                                    VerticalOptions="End" HorizontalOptions="Center" Margin="50"
+                                    BackgroundColor="{AppThemeBinding Default={StaticResource greyish_l}, 
+                                                                      Light={StaticResource greyish_l}, Dark={StaticResource greyish_d}}">
+                            </Button>
+                        </ViewCell>
                     </TableSection>
                 </TableRoot>
             </TableView>
-            <Button VerticalOptions="End" HorizontalOptions="Center" Text="Сбросить смену обоев" x:Name="stop_changing" Clicked="stop_changing_Clicked" Margin="50"></Button>
+
         </StackLayout>
     </ContentPage.Content>
 </ContentPage>

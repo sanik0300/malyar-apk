@@ -36,7 +36,6 @@ namespace malyar_apk
                         {
                             result.end_time = result.end_time.Add(TimeSpan.FromDays(1));
                         }
-                        GeneralIO.OnProgressChanged();
                         return result;
                         break;
                 }
@@ -57,7 +56,6 @@ namespace malyar_apk
                 writer.WriteStringValue(v is string? v as string : ((TimeSpan)v).ToString(Constants.TimeFormat));
             }
             writer.WriteEndObject();
-            GeneralIO.OnProgressChanged();
         }
     }
 }

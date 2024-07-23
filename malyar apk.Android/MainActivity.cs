@@ -1,4 +1,5 @@
 ﻿using Android.App;
+using Android.Hardware.Display;
 using Android.Content.PM;
 using Android.Runtime;
 using Android.OS;
@@ -9,17 +10,29 @@ using malyar_apk.Shared;
 using Android.Provider;
 using Android.Database;
 using System.IO;
+using Android.Content.Res;
+using System;
+using Android.Views;
+using Java.Util.Prefs;
+using AndroidX.AppCompat.App;
 
 namespace malyar_apk.Droid
 {
     [Activity(Name = "com.sanikshomemade.malyar_apk.MainActivity", LaunchMode = LaunchMode.SingleTask, Label = "malyar_apk", Icon = "@mipmap/icon", Theme = "@style/MainTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize)]
     public class MainActivity : global::Xamarin.Forms.Platform.Android.FormsAppCompatActivity
     {
+        private Orientation currentOrientation;
+        bool darkThemeCurrently = false;
         private IdlenessEndReceiver idleness_receiver;
         public bool InForeground { get; private set; }
         private bool StorageReadAllowed;
 
         internal WPServiceConnection WPCNN = new WPServiceConnection();
+
+    #if __ANDROID_17__
+        RotationChangeListener rotationChangeListener;
+        private bool IsOrientationChanging;
+    #endif
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -29,6 +42,11 @@ namespace malyar_apk.Droid
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
             LoadApplication(new App());
+
+            if((int)Build.VERSION.SdkInt >= 29)
+            {
+                darkThemeCurrently = (this.Resources.Configuration.UiMode & UiMode.NightMask) == UiMode.NightYes;
+            }
             StorageReadAllowed = DependencyService.Get<IPermitMediator>().IsPermitted(InvolvedPermissions.StorageRead);
 
             if (!WaitForWPChangeService.Exists) { return; }
@@ -196,17 +214,69 @@ namespace malyar_apk.Droid
             }
         }
 
+        private void recreateDialogIfExists()
+        {
+            AndroidX.Fragment.App.Fragment f = SupportFragmentManager.FindFragmentByTag(AndroidConstants.WP_PREVIEW_DIALOG_TAG);
+            if (f != null)
+            {
+                SupportFragmentManager.BeginTransaction().Detach(f).Commit();
+                SupportFragmentManager.BeginTransaction().Attach(f).Commit();
+            }
+        }
+
+        public override void OnConfigurationChanged(Configuration newConfig)
+        {
+            base.OnConfigurationChanged(newConfig);
+            if(this.currentOrientation != newConfig.Orientation)
+            {
+                if ((int)Build.VERSION.SdkInt >= 17)
+                {
+                    IsOrientationChanging = true;
+                }
+                recreateDialogIfExists();
+            }
+            this.currentOrientation = newConfig.Orientation;
+
+            int themeOption = Xamarin.Essentials.Preferences.Get(Constants.THEME_KEY, (int)Build.VERSION.SdkInt >= 29? 0:1);
+            if(themeOption>0) { return; }
+
+            bool nightmodeNew = (newConfig.UiMode & UiMode.NightMask) == UiMode.NightYes;
+            if(darkThemeCurrently!=nightmodeNew)
+            {
+                DependencyService.Get<I_UIMediator>().ConfirmThemeChangeOnPlatform(nightmodeNew? 2 : 1);
+                (App.Current as App).SwitchAppTheme(nightmodeNew);
+            }
+            darkThemeCurrently = nightmodeNew;
+        }
 
         protected override void OnPause()
         {
             base.OnPause();
             InForeground = false;
+            
+            if ((int)Build.VERSION.SdkInt >= 17)
+            {
+                DisplayManager dsm = (DisplayManager)this.GetSystemService(DisplayService);
+                dsm.UnregisterDisplayListener(rotationChangeListener);
+            }
         }
 
         protected override void OnResume()
         {    
             base.OnResume();
-            if(!StorageReadAllowed)
+
+            if ((int)Build.VERSION.SdkInt >= 17)
+            {
+                DisplayManager dsm = (DisplayManager)this.GetSystemService(DisplayService);
+                if(rotationChangeListener==null)
+                {
+                    rotationChangeListener = new RotationChangeListener(recreateDialogIfExists, 
+                                                                        () => IsOrientationChanging, 
+                                                                        (b) => IsOrientationChanging = b) ;
+                }
+                dsm.RegisterDisplayListener(rotationChangeListener, null);
+            }
+            if (!StorageReadAllowed)
             {
                 IPermitMediator permit = DependencyService.Get<IPermitMediator>();
                 if(!permit.IsPermitted(InvolvedPermissions.StorageRead)) { return; }
@@ -214,6 +284,7 @@ namespace malyar_apk.Droid
                 permit.OnFilesReadUnblocked();
                 StorageReadAllowed = true;
             }
+
             InForeground = true;
             if (idleness_receiver == null)
                 return;
@@ -231,7 +302,8 @@ namespace malyar_apk.Droid
         protected override void OnStart()
         {
             base.OnStart();
-
+            currentOrientation = Resources.Configuration.Orientation;
+            
             (DependencyService.Get<IOMediator>() as IO_Implementation).OnUpdateWhichFilesExist();
             
             if (!WPCNN.IsConnected) { return; }
@@ -242,7 +314,6 @@ namespace malyar_apk.Droid
         {
             if(WPCNN.IsConnected) { this.UnbindService(WPCNN); }
 
-            //ContextDependentObject.clean_references();
             base.OnDestroy();
         }
     }
