@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="launcher_background">#4f6c77</color>
+    <color name="colorPrimary">#032e42</color>
+	<color name="colorSurface">#032e42</color>
+
+	<color name="colorPrimaryDark">#303F9F</color>
+
+    <color name="colorAccent">#a7c4d4</color>
+	<color name="textColor">#e7f0ed</color>
+	<color name="statusBarColor">#032e42</color>
+</resources>
