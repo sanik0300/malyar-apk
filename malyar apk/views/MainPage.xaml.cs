@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using malyar_apk.Shared;
 using System.Linq;
 using Xamarin.Forms;
+using System.Text;
 
 namespace malyar_apk
 {
@@ -12,15 +13,21 @@ namespace malyar_apk
         bool horizontal;
         private bool user_went_to_other_page = false;
 
-        private static IOMediator memdiator = DependencyService.Get<IOMediator>();
+        private static IOMediator iomedi = DependencyService.Get<IOMediator>();
+        private static I_UIMediator uimedi = DependencyService.Get<I_UIMediator>();
         public MainPage()
         {          
             InitializeComponent();
+            (App.Current as App).UserAppThemeChanged += (s, a) =>
+            {
+                if(user_went_to_other_page) { return; }
+                randomBackgroundAccordingToTheme(s as App);
+            };
             TimedPicturesLoader.IntervalDeleted += Interval_WasDeleted;
             TimedPicturesLoader.IntervalInserted += Interval_WasInserted;
             
             TimedPicturesLoader.ReVisualiseSchedule += RevisualiseSchedule;
-            memdiator.UpdateWhichImagesExist += (s, a) => {
+            iomedi.UpdateWhichImagesExist += (s, a) => {
                 foreach (SchedulePiece SP in schedule_container.Children)
                 {
                     SP.PingImageRepresentation();
@@ -137,15 +144,31 @@ namespace malyar_apk
             wp_amount_txt.Text = $"{schedule_container.Children.Count} смен(ы) обоев в расписании";
         }
 
+        private void randomBackgroundAccordingToTheme(App app)
+        {
+            int backgroundNumber = new Random().Next(1, uimedi.CountBackgrounds() + 1);
+            StringBuilder bgImagePath = new StringBuilder($"images/background/bg{backgroundNumber}");
+            if (app.UserAppTheme == OSAppTheme.Dark)
+            {
+                bgImagePath.Append("_dark");
+            }
+            bgImagePath.Append(".jpg");
+            this.BackgroundImageSource = new FileImageSource() { File = bgImagePath.ToString() };
+            uimedi.FixBackgroundTiling(this);
+        }
+
         protected override void OnAppearing()
         {
             base.OnAppearing();
+
+            randomBackgroundAccordingToTheme(App.Current as App);
+            uimedi.AdjustOpacity(buttons_strip, 0.8f);
 
             if (user_went_to_other_page) {
                 user_went_to_other_page = false;
                 return;
             }
-            if (memdiator.WasInitialized) {return;}               
+            if (iomedi.WasInitialized) {return;}               
 
             if (TimedPicturesLoader.CheckOutExistingOnes())
                 return;
@@ -185,8 +208,8 @@ namespace malyar_apk
             IPermitMediator permit = DependencyService.Get<IPermitMediator>();
             if(permit.IsPermitted(InvolvedPermissions.StorageRead))
             {
-                memdiator.AskForFileInPicker();
-                memdiator.FilePathDelivered += OnFilePathDelivered;
+                iomedi.AskForFileInPicker();
+                iomedi.FilePathDelivered += OnFilePathDelivered;
             } 
             else {
                 permit.AskPermission(InvolvedPermissions.StorageRead);
@@ -200,7 +223,7 @@ namespace malyar_apk
                 preview.Source = ImageSource.FromFile(filepath_on_the_way);
             }
             addnew.IsEnabled = CheckConstructorCompleteness() && end_new.Time > begin_new.Time;
-            memdiator.FilePathDelivered -= OnFilePathDelivered;
+            iomedi.FilePathDelivered -= OnFilePathDelivered;
         }
 
         private void addnew_Clicked(object sender, EventArgs e)
@@ -263,6 +286,8 @@ namespace malyar_apk
 
             this.width = width;
             this.height = height;
+
+            uimedi.FixBackgroundTiling(this);
 
             scrollview.Orientation = horizontal ? ScrollOrientation.Horizontal : ScrollOrientation.Vertical;
             stack_layout.Orientation = horizontal ? StackOrientation.Horizontal : StackOrientation.Vertical;//большая панель где содержится вообще всё

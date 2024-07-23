@@ -25,7 +25,7 @@ namespace malyar_apk.Droid
             {
                 renderedView = e.NewElement as InteractiveImage;
 
-                _listener = (renderedView.Parent is PhoneFrame) ? new GestureRecognizerWithLongPress(renderedView) : new GestureDetector.SimpleOnGestureListener();
+                _listener = (renderedView is InteractiveImage) ? new GestureRecognizerWithLongPress(renderedView) : new GestureDetector.SimpleOnGestureListener();
                 _detector = new GestureDetector(_listener);
 
                 GenericMotion += (s, a) => _detector.OnTouchEvent(a.Event);

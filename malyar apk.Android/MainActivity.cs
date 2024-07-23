@@ -13,6 +13,8 @@ using System.IO;
 using Android.Content.Res;
 using System;
 using Android.Views;
+using Java.Util.Prefs;
+using AndroidX.AppCompat.App;
 
 namespace malyar_apk.Droid
 {
@@ -20,6 +22,7 @@ namespace malyar_apk.Droid
     public class MainActivity : global::Xamarin.Forms.Platform.Android.FormsAppCompatActivity
     {
         private Orientation currentOrientation;
+        bool darkThemeCurrently = false;
         private IdlenessEndReceiver idleness_receiver;
         public bool InForeground { get; private set; }
         private bool StorageReadAllowed;
@@ -39,6 +42,11 @@ namespace malyar_apk.Droid
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
             LoadApplication(new App());
+
+            if((int)Build.VERSION.SdkInt >= 29)
+            {
+                darkThemeCurrently = (this.Resources.Configuration.UiMode & UiMode.NightMask) == UiMode.NightYes;
+            }
             StorageReadAllowed = DependencyService.Get<IPermitMediator>().IsPermitted(InvolvedPermissions.StorageRead);
 
             if (!WaitForWPChangeService.Exists) { return; }
@@ -228,6 +236,17 @@ namespace malyar_apk.Droid
                 recreateDialogIfExists();
             }
             this.currentOrientation = newConfig.Orientation;
+
+            int themeOption = Xamarin.Essentials.Preferences.Get(Constants.THEME_KEY, (int)Build.VERSION.SdkInt >= 29? 0:1);
+            if(themeOption>0) { return; }
+
+            bool nightmodeNew = (newConfig.UiMode & UiMode.NightMask) == UiMode.NightYes;
+            if(darkThemeCurrently!=nightmodeNew)
+            {
+                DependencyService.Get<I_UIMediator>().ConfirmThemeChangeOnPlatform(nightmodeNew? 2 : 1);
+                (App.Current as App).SwitchAppTheme(nightmodeNew);
+            }
+            darkThemeCurrently = nightmodeNew;
         }
 
         protected override void OnPause()
@@ -284,7 +303,7 @@ namespace malyar_apk.Droid
         {
             base.OnStart();
             currentOrientation = Resources.Configuration.Orientation;
-
+            
             (DependencyService.Get<IOMediator>() as IO_Implementation).OnUpdateWhichFilesExist();
             
             if (!WPCNN.IsConnected) { return; }

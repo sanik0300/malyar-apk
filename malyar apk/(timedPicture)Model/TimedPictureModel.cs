@@ -25,6 +25,10 @@ namespace malyar_apk.Shared {
             }
             if(interval.Minutes > 0)
             {
+                if(interval.Hours > 0)
+                {
+                    sb.Append(' ');
+                }
                 sb.Append($"{interval.Minutes} мин");
             }
             return sb.ToString();

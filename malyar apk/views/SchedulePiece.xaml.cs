@@ -151,8 +151,11 @@ namespace malyar_apk
             this.height = height;
 
             double padding_coef = Math.Max(2, 10 * DimensionMultiplier);
-            akaphone.CornerRadius = (float)padding_coef;
-            akaphone.Padding = new Thickness(padding_coef);
+            akaphone.CornerRadius = frameToClipImg.CornerRadius = (float)padding_coef;
+            if(filepath_here.Width > 0)
+            {
+                filepath_place.ScrollToAsync(filepath_here.Width, 0, false);
+            }
 
             bool change_grid_vert = !horizontal && actual_schedule_part.DurationInMinutes <= MaxIntervalWhenChangeGrid;
             double grid_offset = change_grid_vert ? 1 - Math.Pow(DimensionMultiplier, 2) : 0;

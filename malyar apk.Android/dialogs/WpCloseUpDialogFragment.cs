@@ -105,7 +105,7 @@ namespace malyar_apk.Droid
         {
             base.OnResume();
             Window wnd = this.Dialog.Window;
-            wnd.SetBackgroundDrawable(new ColorDrawable(Color.White) { Alpha = 128 });
+            wnd.SetBackgroundDrawable(new ColorDrawable(this.Resources.GetColor(Resource.Color.launcher_background)) { Alpha = 128 });
             wnd.SetLayout(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
             wnd.SetGravity(GravityFlags.Center);
 

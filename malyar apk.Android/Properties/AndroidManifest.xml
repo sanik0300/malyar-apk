@@ -1,7 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" android:versionCode="1" android:versionName="0.9a" package="com.sanikshomemade.malyar_apk" android:installLocation="auto">
 	<uses-sdk android:minSdkVersion="17" android:targetSdkVersion="33" />
-	<application android:label="malyar_apk.Android" android:theme="@style/MainTheme">
+	<application android:label="malyar_apk.Android" 
+				 android:theme="@style/MainTheme"
+				 android:forceDarkAllowed="false">
 	</application>
 	<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
 	<uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
